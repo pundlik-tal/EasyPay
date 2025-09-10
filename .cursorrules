@@ -1,0 +1,264 @@
+# EasyPay Payment Gateway - Cursor Rules
+
+## File Size Limits
+- Maximum file size: 700 lines
+- Preferred file size: 600 lines or less
+- If a file exceeds 700 lines, it must be refactored into smaller modules
+- Split large files by functionality, not just by line count
+
+## Project Structure Guidelines
+
+### Directory Structure
+```
+easypay/
+├── src/                          # Source code
+│   ├── api/                      # API layer
+│   │   ├── v1/                   # API version 1
+│   │   │   ├── endpoints/        # API endpoints
+│   │   │   ├── middleware/       # API middleware
+│   │   │   └── schemas/          # Request/response schemas
+│   │   └── common/               # Shared API components
+│   ├── core/                     # Core business logic
+│   │   ├── services/             # Business services
+│   │   ├── models/               # Data models
+│   │   ├── repositories/         # Data access layer
+│   │   └── exceptions/           # Custom exceptions
+│   ├── integrations/             # External integrations
+│   │   ├── authorize_net/        # Authorize.net integration
+│   │   ├── webhooks/             # Webhook handlers
+│   │   └── notifications/        # Notification services
+│   ├── infrastructure/           # Infrastructure layer
+│   │   ├── database/             # Database configuration
+│   │   ├── cache/                # Caching layer
+│   │   ├── monitoring/           # Monitoring and logging
+│   │   └── security/             # Security components
+│   └── utils/                    # Utility functions
+├── tests/                        # Test files
+│   ├── unit/                     # Unit tests
+│   ├── integration/              # Integration tests
+│   ├── e2e/                      # End-to-end tests
+│   └── fixtures/                 # Test fixtures
+├── docs/                         # Documentation
+│   ├── api/                      # API documentation
+│   ├── architecture/             # Architecture docs
+│   ├── deployment/               # Deployment guides
+│   └── sources/                  # Source documentation
+├── scripts/                      # Utility scripts
+├── config/                       # Configuration files
+├── migrations/                   # Database migrations
+└── docker/                       # Docker configurations
+```
+
+### File Naming Conventions
+- Use snake_case for Python files
+- Use PascalCase for class names
+- Use UPPER_CASE for constants
+- Use descriptive names that indicate purpose
+- Group related files in appropriate directories
+
+### Code Organization Rules
+
+#### 1. Single Responsibility Principle
+- Each file should have one clear purpose
+- Split files when they handle multiple responsibilities
+- Keep related functionality together
+
+#### 2. Import Organization
+```python
+# Standard library imports
+import os
+import sys
+from datetime import datetime
+
+# Third-party imports
+import fastapi
+import pydantic
+from sqlalchemy import create_engine
+
+# Local imports
+from src.core.models import Payment
+from src.core.services import PaymentService
+```
+
+#### 3. Class and Function Limits
+- Maximum 200 lines per class
+- Maximum 50 lines per function
+- Maximum 10 parameters per function
+- Use type hints for all functions
+
+#### 4. Module Structure
+```python
+"""
+Module docstring describing the purpose.
+"""
+# Imports
+# Constants
+# Classes
+# Functions
+# Main execution (if applicable)
+```
+
+### Documentation Requirements
+- Every module must have a docstring
+- Every class must have a docstring
+- Every public function must have a docstring
+- Use type hints for all parameters and return values
+- Include examples in docstrings for complex functions
+
+### Testing Requirements
+- Test files must be in the `tests/` directory
+- Test file names must start with `test_`
+- Each test function must be under 50 lines
+- Use descriptive test names that explain the scenario
+- Group related tests in classes
+
+### Error Handling
+- Use custom exceptions for business logic errors
+- Log errors with appropriate levels
+- Include context in error messages
+- Handle errors at the appropriate level
+
+### Performance Guidelines
+- Use async/await for I/O operations
+- Implement connection pooling for databases
+- Use caching for frequently accessed data
+- Optimize database queries
+- Monitor performance metrics
+
+### Security Guidelines
+- Never log sensitive data (passwords, tokens, card numbers)
+- Use environment variables for secrets
+- Validate all input data
+- Implement proper authentication and authorization
+- Use HTTPS for all communications
+
+### Refactoring Triggers
+- File exceeds 700 lines
+- Class exceeds 200 lines
+- Function exceeds 50 lines
+- Cyclomatic complexity > 10
+- Code duplication > 3 instances
+- Test coverage < 80%
+
+### Code Quality Standards
+- Follow PEP 8 style guide
+- Use black for code formatting
+- Use isort for import sorting
+- Use flake8 for linting
+- Use mypy for type checking
+- Use pytest for testing
+
+### Git Workflow
+- Use feature branches for new features
+- Use descriptive commit messages
+- Squash commits before merging
+- Require code review for all changes
+- Run tests before committing
+
+### Deployment Guidelines
+- Use Docker for containerization
+- Use environment-specific configurations
+- Implement health checks
+- Use proper logging levels
+- Monitor application metrics
+
+### Monitoring and Observability
+- Log all important events
+- Use structured logging (JSON)
+- Include correlation IDs
+- Monitor performance metrics
+- Set up alerts for critical issues
+
+### API Design Guidelines
+- Use RESTful principles
+- Version your APIs
+- Use consistent naming conventions
+- Provide comprehensive documentation
+- Handle errors gracefully
+- Use appropriate HTTP status codes
+
+### Database Guidelines
+- Use migrations for schema changes
+- Index frequently queried columns
+- Use transactions for data consistency
+- Implement soft deletes where appropriate
+- Regular backup and recovery testing
+
+### Caching Strategy
+- Cache frequently accessed data
+- Use appropriate cache TTL
+- Implement cache invalidation
+- Monitor cache hit rates
+- Use Redis for distributed caching
+
+### Message Queue Guidelines
+- Use message queues for async processing
+- Implement retry logic with exponential backoff
+- Use dead letter queues for failed messages
+- Monitor queue depths and processing times
+- Implement circuit breakers
+
+### Webhook Guidelines
+- Verify webhook signatures
+- Implement idempotency
+- Use retry logic for failed deliveries
+- Log all webhook events
+- Handle webhook timeouts gracefully
+
+### Payment Processing Guidelines
+- Never store card data
+- Use tokenization for sensitive data
+- Implement idempotency for all operations
+- Log all payment events
+- Handle payment failures gracefully
+- Implement fraud detection
+- Comply with PCI DSS requirements
+
+### Error Response Format
+```json
+{
+  "error": {
+    "type": "validation_error",
+    "code": "invalid_amount",
+    "message": "Amount must be greater than 0",
+    "param": "amount",
+    "request_id": "req_123456789"
+  },
+  "timestamp": "2024-01-01T00:00:00Z"
+}
+```
+
+### Success Response Format
+```json
+{
+  "data": {
+    "id": "pay_123456789",
+    "status": "completed",
+    "amount": {
+      "value": "10.00",
+      "currency": "USD"
+    }
+  },
+  "request_id": "req_123456789",
+  "timestamp": "2024-01-01T00:00:00Z"
+}
+```
+
+## Enforcement
+- Use pre-commit hooks to enforce these rules
+- Run linting and type checking in CI/CD
+- Require code review for all changes
+- Monitor file sizes and complexity metrics
+- Regular refactoring sessions
+
+## Exceptions
+- Configuration files may exceed line limits if necessary
+- Generated files are exempt from these rules
+- Documentation files may be longer if they serve a specific purpose
+- Test fixtures may be longer if they contain extensive test data
+
+## Review Process
+- Review these rules monthly
+- Update based on team feedback
+- Ensure rules support project goals
+- Maintain consistency across the codebase

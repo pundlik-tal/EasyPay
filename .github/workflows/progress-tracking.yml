@@ -1,0 +1,56 @@
+name: Progress Tracking
+
+on:
+  schedule:
+    - cron: '0 9 * * *'  # Run daily at 9 AM
+  workflow_dispatch:  # Allow manual triggering
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'docs/sources/04-progress-tracking-dashboard.md'
+
+jobs:
+  track-progress:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        pip install pyyaml requests
+        
+    - name: Calculate progress metrics
+      id: progress
+      run: |
+        python scripts/calculate_progress.py
+        
+    - name: Update progress dashboard
+      run: |
+        python scripts/update_dashboard.py
+        
+    - name: Generate progress report
+      run: |
+        python scripts/generate_report.py
+        
+    - name: Commit progress updates
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add docs/sources/04-progress-tracking-dashboard.md
+        git diff --staged --quiet || git commit -m "Update progress tracking dashboard [skip ci]"
+        git push
+        
+    - name: Send progress notification
+      if: always()
+      run: |
+        python scripts/send_notification.py
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
