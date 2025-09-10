@@ -82,8 +82,8 @@ class Payment(Base):
     processor_transaction_id = Column(String(255), nullable=True)
     
     # Refund information
-    refunded_amount = Column(Numeric(10, 2), nullable=True, default=0)
-    refund_count = Column(Integer, nullable=True, default=0)
+    refunded_amount = Column(Numeric(10, 2), nullable=True, default=Decimal('0'))
+    refund_count = Column(Integer, nullable=True, default=None)
     
     # Timestamps
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)

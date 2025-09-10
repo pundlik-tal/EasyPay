@@ -15,7 +15,7 @@ from starlette.responses import Response
 from src.core.exceptions import EasyPayException
 from src.infrastructure.database import init_database
 from src.infrastructure.cache import init_cache
-from src.api.v1.endpoints import health, payments
+from src.api.v1.endpoints import health, payments, admin
 from src.infrastructure.monitoring import setup_logging
 
 # Prometheus metrics
@@ -165,6 +165,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 # Include routers
 app.include_router(health.router, prefix="/health", tags=["health"])
 app.include_router(payments.router, prefix="/api/v1/payments", tags=["payments"])
+app.include_router(admin.router, prefix="/api/v1", tags=["admin"])
 
 
 # Prometheus metrics endpoint

@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EasyPay Database Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.8;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .nav-tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .nav-tab.active {
+            background: white;
+            border-bottom: 3px solid #007bff;
+            color: #007bff;
+        }
+        
+        .nav-tab:hover {
+            background: #e9ecef;
+        }
+        
+        .tab-content {
+            padding: 20px;
+            min-height: 500px;
+        }
+        
+        .tab-pane {
+            display: none;
+        }
+        
+        .tab-pane.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .form-group textarea {
+            height: 120px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .btn {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        
+        .btn:hover {
+            background: #0056b3;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .table th,
+        .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .table th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        .table tr:hover {
+            background: #f5f5f5;
+        }
+        
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #007bff;
+        }
+        
+        .stat-card h3 {
+            font-size: 2rem;
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗄️ EasyPay Database Admin</h1>
+            <p>Database Management Interface</p>
+        </div>
+        
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('overview')">Overview</button>
+            <button class="nav-tab" onclick="showTab('tables')">Tables</button>
+            <button class="nav-tab" onclick="showTab('query')">Query</button>
+            <button class="nav-tab" onclick="showTab('stats')">Statistics</button>
+        </div>
+        
+        <div class="tab-content">
+            <!-- Overview Tab -->
+            <div id="overview" class="tab-pane active">
+                <h2>Database Overview</h2>
+                <div id="health-status" class="loading">Loading health status...</div>
+                <div id="health-details" style="margin-top: 20px;"></div>
+            </div>
+            
+            <!-- Tables Tab -->
+            <div id="tables" class="tab-pane">
+                <h2>Database Tables</h2>
+                <button class="btn" onclick="loadTables()">Refresh Tables</button>
+                <div id="tables-content" class="loading">Click "Refresh Tables" to load table information</div>
+            </div>
+            
+            <!-- Query Tab -->
+            <div id="query" class="tab-pane">
+                <h2>SQL Query Interface</h2>
+                <div class="form-group">
+                    <label for="sql-query">SQL Query (SELECT only):</label>
+                    <textarea id="sql-query" placeholder="SELECT * FROM payments LIMIT 10;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="query-limit">Row Limit:</label>
+                    <input type="number" id="query-limit" value="100" min="1" max="1000">
+                </div>
+                <button class="btn" onclick="executeQuery()">Execute Query</button>
+                <div id="query-results" style="margin-top: 20px;"></div>
+            </div>
+            
+            <!-- Statistics Tab -->
+            <div id="stats" class="tab-pane">
+                <h2>Database Statistics</h2>
+                <button class="btn" onclick="loadStats()">Refresh Statistics</button>
+                <div id="stats-content" class="loading">Click "Refresh Statistics" to load database statistics</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/v1/admin';
+        
+        // Tab switching
+        function showTab(tabName) {
+            // Hide all tab panes
+            document.querySelectorAll('.tab-pane').forEach(pane => {
+                pane.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab pane
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+            
+            // Load data for specific tabs
+            if (tabName === 'overview') {
+                loadHealthStatus();
+            }
+        }
+        
+        // Load database health status
+        async function loadHealthStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/database/health`);
+                const data = await response.json();
+                
+                const statusDiv = document.getElementById('health-status');
+                const detailsDiv = document.getElementById('health-details');
+                
+                if (data.status === 'healthy') {
+                    statusDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <strong>✅ Database is healthy!</strong>
+                        </div>
+                    `;
+                    
+                    detailsDiv.innerHTML = `
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <h3>${data.test_query}</h3>
+                                <p>Connection Test</p>
+                            </div>
+                            <div class="stat-card">
+                                <h3>${data.current_time ? new Date(data.current_time).toLocaleString() : 'N/A'}</h3>
+                                <p>Current Time</p>
+                            </div>
+                        </div>
+                        <div class="code-block">${data.version}</div>
+                    `;
+                } else {
+                    statusDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <strong>❌ Database is unhealthy!</strong><br>
+                            Error: ${data.error}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('health-status').innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>❌ Failed to connect to database!</strong><br>
+                        Error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        // Load database tables
+        async function loadTables() {
+            const contentDiv = document.getElementById('tables-content');
+            contentDiv.innerHTML = '<div class="loading">Loading tables...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/database/tables`);
+                const data = await response.json();
+                
+                let html = `<h3>Database Tables (${data.total_tables})</h3>`;
+                
+                data.tables.forEach(table => {
+                    html += `
+                        <div style="margin-bottom: 20px; border: 1px solid #ddd; border-radius: 5px; padding: 15px;">
+                            <h4>📋 ${table.name}</h4>
+                            <p><strong>Type:</strong> ${table.type}</p>
+                            <p><strong>Columns:</strong></p>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Column Name</th>
+                                        <th>Data Type</th>
+                                        <th>Nullable</th>
+                                        <th>Default</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${table.columns.map(col => `
+                                        <tr>
+                                            <td>${col.name}</td>
+                                            <td>${col.type}</td>
+                                            <td>${col.nullable ? 'Yes' : 'No'}</td>
+                                            <td>${col.default || '-'}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                });
+                
+                contentDiv.innerHTML = html;
+            } catch (error) {
+                contentDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>❌ Failed to load tables!</strong><br>
+                        Error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        // Execute SQL query
+        async function executeQuery() {
+            const query = document.getElementById('sql-query').value.trim();
+            const limit = document.getElementById('query-limit').value;
+            const resultsDiv = document.getElementById('query-results');
+            
+            if (!query) {
+                resultsDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        Please enter a SQL query
+                    </div>
+                `;
+                return;
+            }
+            
+            resultsDiv.innerHTML = '<div class="loading">Executing query...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/database/query?query=${encodeURIComponent(query)}&limit=${limit}`);
+                const data = await response.json();
+                
+                if (data.rows && data.rows.length > 0) {
+                    const columns = data.columns;
+                    let html = `
+                        <div class="alert alert-success">
+                            <strong>✅ Query executed successfully!</strong><br>
+                            Returned ${data.total_rows} rows
+                        </div>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    ${columns.map(col => `<th>${col}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.rows.map(row => `
+                                    <tr>
+                                        ${columns.map(col => `<td>${row[col] || '-'}</td>`).join('')}
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                    resultsDiv.innerHTML = html;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="alert alert-info">
+                            <strong>ℹ️ Query executed successfully!</strong><br>
+                            No rows returned
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>❌ Query failed!</strong><br>
+                        Error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        // Load database statistics
+        async function loadStats() {
+            const contentDiv = document.getElementById('stats-content');
+            contentDiv.innerHTML = '<div class="loading">Loading statistics...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/database/stats`);
+                const data = await response.json();
+                
+                let html = `
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>${data.database_size}</h3>
+                            <p>Database Size</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>${data.total_connections}</h3>
+                            <p>Total Connections</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>${data.active_connections}</h3>
+                            <p>Active Connections</p>
+                        </div>
+                    </div>
+                    <h3>Table Statistics</h3>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Table</th>
+                                <th>Live Rows</th>
+                                <th>Inserts</th>
+                                <th>Updates</th>
+                                <th>Deletes</th>
+                                <th>Dead Rows</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.table_statistics.map(stat => `
+                                <tr>
+                                    <td>${stat.table}</td>
+                                    <td>${stat.live_rows}</td>
+                                    <td>${stat.inserts}</td>
+                                    <td>${stat.updates}</td>
+                                    <td>${stat.deletes}</td>
+                                    <td>${stat.dead_rows}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+                
+                contentDiv.innerHTML = html;
+            } catch (error) {
+                contentDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>❌ Failed to load statistics!</strong><br>
+                        Error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        // Load health status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadHealthStatus();
+        });
+    </script>
+</body>
+</html>
