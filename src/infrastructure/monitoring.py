@@ -4,12 +4,15 @@ EasyPay Payment Gateway - Monitoring Infrastructure
 import logging
 import os
 import sys
+import time
+import psutil
 from typing import Dict, Any
+from datetime import datetime
 
 import structlog
-from prometheus_client import Counter, Histogram, Gauge, Info
+from prometheus_client import Counter, Histogram, Gauge, Info, Summary
 
-# Prometheus metrics
+# HTTP Metrics
 REQUEST_COUNT = Counter(
     'easypay_http_requests_total',
     'Total HTTP requests',
@@ -22,10 +25,23 @@ REQUEST_DURATION = Histogram(
     ['method', 'endpoint']
 )
 
+REQUEST_SIZE = Histogram(
+    'easypay_http_request_size_bytes',
+    'HTTP request size in bytes',
+    ['method', 'endpoint']
+)
+
+RESPONSE_SIZE = Histogram(
+    'easypay_http_response_size_bytes',
+    'HTTP response size in bytes',
+    ['method', 'endpoint']
+)
+
+# Payment Metrics
 PAYMENT_COUNT = Counter(
     'easypay_payments_total',
     'Total payments processed',
-    ['status', 'currency']
+    ['status', 'currency', 'payment_method']
 )
 
 PAYMENT_AMOUNT = Histogram(
@@ -34,16 +50,63 @@ PAYMENT_AMOUNT = Histogram(
     ['currency']
 )
 
-ACTIVE_CONNECTIONS = Gauge(
-    'easypay_active_connections',
-    'Number of active connections'
+PAYMENT_PROCESSING_TIME = Summary(
+    'easypay_payment_processing_seconds',
+    'Payment processing time in seconds',
+    ['status']
 )
 
+# Webhook Metrics
+WEBHOOK_COUNT = Counter(
+    'easypay_webhooks_total',
+    'Total webhooks processed',
+    ['event_type', 'status', 'source']
+)
+
+WEBHOOK_DELIVERY_TIME = Histogram(
+    'easypay_webhook_delivery_seconds',
+    'Webhook delivery time in seconds',
+    ['event_type', 'status']
+)
+
+WEBHOOK_RETRY_COUNT = Counter(
+    'easypay_webhook_retries_total',
+    'Total webhook retries',
+    ['event_type', 'retry_attempt']
+)
+
+# Authentication Metrics
+AUTH_ATTEMPTS = Counter(
+    'easypay_auth_attempts_total',
+    'Total authentication attempts',
+    ['method', 'status']
+)
+
+AUTH_FAILURES = Counter(
+    'easypay_auth_failures_total',
+    'Total authentication failures',
+    ['method', 'reason']
+)
+
+# Database Metrics
 DATABASE_CONNECTIONS = Gauge(
     'easypay_database_connections',
     'Number of database connections'
 )
 
+DATABASE_QUERY_DURATION = Histogram(
+    'easypay_database_query_duration_seconds',
+    'Database query duration in seconds',
+    ['operation', 'table']
+)
+
+DATABASE_ERRORS = Counter(
+    'easypay_database_errors_total',
+    'Total database errors',
+    ['operation', 'error_type']
+)
+
+# Cache Metrics
 CACHE_HITS = Counter(
     'easypay_cache_hits_total',
     'Total cache hits',
@@ -56,17 +119,83 @@ CACHE_MISSES = Counter(
     ['cache_type']
 )
 
+CACHE_OPERATION_DURATION = Histogram(
+    'easypay_cache_operation_duration_seconds',
+    'Cache operation duration in seconds',
+    ['operation', 'cache_type']
+)
+
+# System Metrics
+SYSTEM_CPU_USAGE = Gauge(
+    'easypay_system_cpu_usage_percent',
+    'System CPU usage percentage'
+)
+
+SYSTEM_MEMORY_USAGE = Gauge(
+    'easypay_system_memory_usage_bytes',
+    'System memory usage in bytes'
+)
+
+SYSTEM_DISK_USAGE = Gauge(
+    'easypay_system_disk_usage_bytes',
+    'System disk usage in bytes',
+    ['device']
+)
+
+# Application Metrics
+ACTIVE_CONNECTIONS = Gauge(
+    'easypay_active_connections',
+    'Number of active connections'
+)
+
+APPLICATION_UPTIME = Gauge(
+    'easypay_application_uptime_seconds',
+    'Application uptime in seconds'
+)
+
 APPLICATION_INFO = Info(
     'easypay_application_info',
     'Application information'
+)
+
+# Error Metrics
+ERROR_COUNT = Counter(
+    'easypay_errors_total',
+    'Total application errors',
+    ['error_type', 'severity']
+)
+
+# Business Metrics
+REVENUE_TOTAL = Counter(
+    'easypay_revenue_total',
+    'Total revenue processed',
+    ['currency']
+)
+
+FRAUD_DETECTIONS = Counter(
+    'easypay_fraud_detections_total',
+    'Total fraud detections',
+    ['fraud_type', 'severity']
+)
+
+CHARGEBACK_COUNT = Counter(
+    'easypay_chargebacks_total',
+    'Total chargebacks',
+    ['reason', 'status']
 )
 
 # Set application info
 APPLICATION_INFO.info({
     'version': '0.1.0',
     'name': 'EasyPay Payment Gateway',
-    'environment': os.getenv('ENVIRONMENT', 'development')
+    'environment': os.getenv('ENVIRONMENT', 'development'),
+    'build_date': datetime.utcnow().isoformat(),
+    'python_version': sys.version,
+    'platform': os.name
 })
+
+# Track application start time for uptime calculation
+_APP_START_TIME = time.time()
 
 
 def setup_logging() -> logging.Logger:
@@ -130,6 +259,31 @@ def setup_logging() -> logging.Logger:
     return app_logger
 
 
+def update_system_metrics() -> None:
+    """Update system metrics with current values."""
+    try:
+        # Update CPU usage
+        cpu_percent = psutil.cpu_percent(interval=1)
+        SYSTEM_CPU_USAGE.set(cpu_percent)
+        
+        # Update memory usage
+        memory = psutil.virtual_memory()
+        SYSTEM_MEMORY_USAGE.set(memory.used)
+        
+        # Update disk usage
+        disk_usage = psutil.disk_usage('/')
+        SYSTEM_DISK_USAGE.labels(device='/').set(disk_usage.used)
+        
+        # Update application uptime
+        uptime = time.time() - _APP_START_TIME
+        APPLICATION_UPTIME.set(uptime)
+        
+    except Exception as e:
+        # Log error but don't fail
+        logger = structlog.get_logger("easypay.monitoring")
+        logger.error("Failed to update system metrics", error=str(e))
+
+
 def get_metrics() -> Dict[str, Any]:
     """
     Get current metrics for monitoring.
@@ -137,15 +291,29 @@ def get_metrics() -> Dict[str, Any]:
     Returns:
         Dict containing current metrics
     """
+    # Update system metrics before returning
+    update_system_metrics()
+    
     return {
         "request_count": REQUEST_COUNT._value.sum(),
         "request_duration": REQUEST_DURATION._sum._value.sum(),
         "payment_count": PAYMENT_COUNT._value.sum(),
         "payment_amount": PAYMENT_AMOUNT._sum._value.sum(),
-        "active_connections": ACTIVE_CONNECTIONS._value._value,
-        "database_connections": DATABASE_CONNECTIONS._value._value,
+        "webhook_count": WEBHOOK_COUNT._value.sum(),
+        "auth_attempts": AUTH_ATTEMPTS._value.sum(),
+        "auth_failures": AUTH_FAILURES._value.sum(),
+        "database_errors": DATABASE_ERRORS._value.sum(),
         "cache_hits": CACHE_HITS._value.sum(),
         "cache_misses": CACHE_MISSES._value.sum(),
+        "error_count": ERROR_COUNT._value.sum(),
+        "revenue_total": REVENUE_TOTAL._value.sum(),
+        "fraud_detections": FRAUD_DETECTIONS._value.sum(),
+        "chargeback_count": CHARGEBACK_COUNT._value.sum(),
+        "active_connections": ACTIVE_CONNECTIONS._value._value,
+        "database_connections": DATABASE_CONNECTIONS._value._value,
+        "system_cpu_usage": SYSTEM_CPU_USAGE._value._value,
+        "system_memory_usage": SYSTEM_MEMORY_USAGE._value._value,
+        "application_uptime": APPLICATION_UPTIME._value._value,
     }
 
 

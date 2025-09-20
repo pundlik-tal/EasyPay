@@ -1,6 +1,7 @@
 """
 EasyPay Payment Gateway - Main Application
 """
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
@@ -15,8 +16,16 @@ from starlette.responses import Response
 from src.core.exceptions import EasyPayException
 from src.infrastructure.database import init_database
 from src.infrastructure.cache import init_cache
-from src.api.v1.endpoints import health, payments, admin, auth, version
+from src.api.v1.endpoints import health, payments, admin, auth, version, webhooks, webhook_receiver
+from src.api.v1.endpoints.authorize_net_webhooks import router as authorize_net_webhooks_router
+from src.api.v1.endpoints.error_management import router as error_management_router
 from src.infrastructure.monitoring import setup_logging
+from src.infrastructure.metrics_middleware import MetricsMiddleware
+from src.infrastructure.error_recovery import GlobalErrorHandlerMiddleware
+from src.infrastructure.graceful_shutdown import graceful_shutdown_manager
+from src.infrastructure.dead_letter_queue import dead_letter_queue_service
+from src.infrastructure.circuit_breaker_service import circuit_breaker_service
+from src.infrastructure.error_reporting import error_reporting_service
 
 # Prometheus metrics
 REQUEST_COUNT = Counter('http_requests_total', 'Total HTTP requests', ['method', 'endpoint', 'status'])
@@ -43,6 +52,18 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         await init_cache()
         logger.info("Cache initialized successfully")
         
+        # Start error handling services
+        await dead_letter_queue_service.start_processing_workers()
+        logger.info("Dead letter queue workers started")
+        
+        # Register shutdown handlers
+        graceful_shutdown_manager.register_shutdown_handler(
+            "dead_letter_queue",
+            dead_letter_queue_service.stop_processing_workers,
+            priority="high",
+            timeout=10
+        )
+        
         logger.info("EasyPay Payment Gateway started successfully")
         
     except Exception as e:
@@ -53,6 +74,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     
     # Shutdown
     logger.info("Shutting down EasyPay Payment Gateway...")
+    await graceful_shutdown_manager.shutdown()
     logger.info("EasyPay Payment Gateway shutdown complete")
 
 
@@ -128,6 +150,18 @@ app = FastAPI(
             "description": "Payment processing, refunds, cancellations, and transaction management"
         },
         {
+            "name": "webhooks",
+            "description": "Webhook endpoint management, delivery, and retry operations"
+        },
+        {
+            "name": "webhook-receiver",
+            "description": "Endpoints for receiving incoming webhooks from external services"
+        },
+        {
+            "name": "authorize-net-webhooks",
+            "description": "Authorize.net specific webhook endpoints for payment processor integration"
+        },
+        {
             "name": "admin",
             "description": "Administrative endpoints for system management"
         }
@@ -147,6 +181,9 @@ app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=["*"]  # Configure based on environment
 )
+
+# Add metrics middleware
+app.add_middleware(MetricsMiddleware)
 
 
 # Request logging middleware
@@ -229,12 +266,19 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
+# Add error handling middleware
+app.add_middleware(GlobalErrorHandlerMiddleware)
+
 # Include routers
 app.include_router(health.router, prefix="/health", tags=["health"])
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["authentication"])
 app.include_router(payments.router, prefix="/api/v1/payments", tags=["payments"])
+app.include_router(webhooks.router, prefix="/api/v1", tags=["webhooks"])
+app.include_router(webhook_receiver.router, prefix="/api/v1", tags=["webhook-receiver"])
+app.include_router(authorize_net_webhooks_router, prefix="/api/v1", tags=["authorize-net-webhooks"])
 app.include_router(admin.router, prefix="/api/v1", tags=["admin"])
 app.include_router(version.router, prefix="/api/v1", tags=["version"])
+app.include_router(error_management_router, prefix="/api/v1", tags=["error-management"])
 
 
 # Prometheus metrics endpoint

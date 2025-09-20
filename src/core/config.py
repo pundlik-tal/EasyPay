@@ -52,6 +52,11 @@ class Settings(BaseSettings):
         default="https://apitest.authorize.net/xml/v1/request.api",
         env="AUTHORIZE_NET_API_URL"
     )
+    AUTHORIZE_NET_WEBHOOK_SECRET: str = Field(
+        default="your-authorize-net-webhook-secret-here",
+        env="AUTHORIZE_NET_WEBHOOK_SECRET",
+        description="Secret key for Authorize.net webhook signature verification"
+    )
     
     # Security
     ALLOWED_HOSTS: List[str] = Field(default=["localhost", "127.0.0.1"], env="ALLOWED_HOSTS")
@@ -64,6 +69,16 @@ class Settings(BaseSettings):
     # Fraud Detection
     FRAUD_THRESHOLD: float = 0.8
     MAX_DAILY_TRANSACTIONS: int = 1000
+    
+    # Webhook Settings
+    WEBHOOK_SECRET: str = Field(
+        default="your-webhook-secret-here", 
+        env="WEBHOOK_SECRET",
+        description="Secret key for webhook signature verification"
+    )
+    WEBHOOK_MAX_RETRIES: int = Field(default=3, env="WEBHOOK_MAX_RETRIES")
+    WEBHOOK_RETRY_INTERVAL: int = Field(default=60, env="WEBHOOK_RETRY_INTERVAL")
+    WEBHOOK_TIMEOUT: int = Field(default=30, env="WEBHOOK_TIMEOUT")
     
     # Logging
     LOG_LEVEL: str = Field(default="INFO", env="LOG_LEVEL")

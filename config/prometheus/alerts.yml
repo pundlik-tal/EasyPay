@@ -1,0 +1,232 @@
+# EasyPay Payment Gateway - Prometheus Alerting Rules
+
+groups:
+  - name: easypay.rules
+    rules:
+      # High Error Rate Alert
+      - alert: HighErrorRate
+        expr: rate(easypay_errors_total[5m]) > 5
+        for: 2m
+        labels:
+          severity: critical
+          service: easypay
+        annotations:
+          summary: "High error rate detected"
+          description: "EasyPay is experiencing {{ $value }} errors per second for more than 2 minutes"
+          runbook_url: "https://docs.easypay.com/runbooks/high-error-rate"
+
+      # High Response Time Alert
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(easypay_http_request_duration_seconds_bucket[5m])) > 1.0
+        for: 3m
+        labels:
+          severity: warning
+          service: easypay
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is {{ $value }}s for more than 3 minutes"
+          runbook_url: "https://docs.easypay.com/runbooks/high-response-time"
+
+      # Low Payment Success Rate Alert
+      - alert: LowPaymentSuccessRate
+        expr: (rate(easypay_payments_total{status="captured"}[5m]) / rate(easypay_payments_total[5m])) * 100 < 90
+        for: 5m
+        labels:
+          severity: critical
+          service: easypay
+        annotations:
+          summary: "Low payment success rate"
+          description: "Payment success rate is {{ $value }}% for more than 5 minutes"
+          runbook_url: "https://docs.easypay.com/runbooks/low-payment-success-rate"
+
+      # High Authentication Failure Rate Alert
+      - alert: HighAuthFailureRate
+        expr: rate(easypay_auth_failures_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+          service: easypay
+        annotations:
+          summary: "High authentication failure rate"
+          description: "Authentication failure rate is {{ $value }} failures per second"
+          runbook_url: "https://docs.easypay.com/runbooks/high-auth-failure-rate"
+
+      # Database Connection Issues Alert
+      - alert: DatabaseConnectionIssues
+        expr: easypay_database_connections == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: easypay
+        annotations:
+          summary: "Database connection issues"
+          description: "No active database connections detected"
+          runbook_url: "https://docs.easypay.com/runbooks/database-connection-issues"
+
+      # High Database Error Rate Alert
+      - alert: HighDatabaseErrorRate
+        expr: rate(easypay_database_errors_total[5m]) > 1
+        for: 2m
+        labels:
+          severity: warning
+          service: easypay
+        annotations:
+          summary: "High database error rate"
+          description: "Database error rate is {{ $value }} errors per second"
+          runbook_url: "https://docs.easypay.com/runbooks/high-database-error-rate"
+
+      # High Cache Miss Rate Alert
+      - alert: HighCacheMissRate
+        expr: rate(easypay_cache_misses_total[5m]) / (rate(easypay_cache_hits_total[5m]) + rate(easypay_cache_misses_total[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: easypay
+        annotations:
+          summary: "High cache miss rate"
+          description: "Cache miss rate is {{ $value }}% for more than 5 minutes"
+          runbook_url: "https://docs.easypay.com/runbooks/high-cache-miss-rate"
+
+      # High System CPU Usage Alert
+      - alert: HighCPUUsage
+        expr: easypay_system_cpu_usage_percent > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: easypay
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}% for more than 5 minutes"
+          runbook_url: "https://docs.easypay.com/runbooks/high-cpu-usage"
+
+      # High Memory Usage Alert
+      - alert: HighMemoryUsage
+        expr: easypay_system_memory_usage_bytes / 1024 / 1024 / 1024 > 4  # 4GB threshold
+        for: 5m
+        labels:
+          severity: warning
+          service: easypay
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value }}GB for more than 5 minutes"
+          runbook_url: "https://docs.easypay.com/runbooks/high-memory-usage"
+
+      # High Disk Usage Alert
+      - alert: HighDiskUsage
+        expr: easypay_system_disk_usage_bytes / 1024 / 1024 / 1024 > 80  # 80GB threshold
+        for: 5m
+        labels:
+          severity: warning
+          service: easypay
+        annotations:
+          summary: "High disk usage"
+          description: "Disk usage is {{ $value }}GB for more than 5 minutes"
+          runbook_url: "https://docs.easypay.com/runbooks/high-disk-usage"
+
+      # Webhook Delivery Failures Alert
+      - alert: WebhookDeliveryFailures
+        expr: rate(easypay_webhooks_total{status="failed"}[5m]) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+          service: easypay
+        annotations:
+          summary: "Webhook delivery failures"
+          description: "Webhook delivery failure rate is {{ $value }} failures per second"
+          runbook_url: "https://docs.easypay.com/runbooks/webhook-delivery-failures"
+
+      # High Fraud Detection Rate Alert
+      - alert: HighFraudDetectionRate
+        expr: rate(easypay_fraud_detections_total[5m]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: easypay
+        annotations:
+          summary: "High fraud detection rate"
+          description: "Fraud detection rate is {{ $value }} detections per second"
+          runbook_url: "https://docs.easypay.com/runbooks/high-fraud-detection-rate"
+
+      # High Chargeback Rate Alert
+      - alert: HighChargebackRate
+        expr: rate(easypay_chargebacks_total[5m]) > 0.01
+        for: 10m
+        labels:
+          severity: critical
+          service: easypay
+        annotations:
+          summary: "High chargeback rate"
+          description: "Chargeback rate is {{ $value }} chargebacks per second"
+          runbook_url: "https://docs.easypay.com/runbooks/high-chargeback-rate"
+
+      # Service Down Alert
+      - alert: ServiceDown
+        expr: up{job="easypay-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: easypay
+        annotations:
+          summary: "EasyPay service is down"
+          description: "EasyPay API service has been down for more than 1 minute"
+          runbook_url: "https://docs.easypay.com/runbooks/service-down"
+
+      # Low Request Rate Alert (Potential DDoS or Service Issue)
+      - alert: LowRequestRate
+        expr: rate(easypay_http_requests_total[5m]) < 0.1
+        for: 10m
+        labels:
+          severity: warning
+          service: easypay
+        annotations:
+          summary: "Low request rate"
+          description: "Request rate is {{ $value }} requests per second for more than 10 minutes"
+          runbook_url: "https://docs.easypay.com/runbooks/low-request-rate"
+
+      # Payment Processing Time Alert
+      - alert: HighPaymentProcessingTime
+        expr: histogram_quantile(0.95, rate(easypay_payment_processing_seconds_bucket[5m])) > 5.0
+        for: 3m
+        labels:
+          severity: warning
+          service: easypay
+        annotations:
+          summary: "High payment processing time"
+          description: "95th percentile payment processing time is {{ $value }}s"
+          runbook_url: "https://docs.easypay.com/runbooks/high-payment-processing-time"
+
+      # Database Query Performance Alert
+      - alert: SlowDatabaseQueries
+        expr: histogram_quantile(0.95, rate(easypay_database_query_duration_seconds_bucket[5m])) > 1.0
+        for: 3m
+        labels:
+          severity: warning
+          service: easypay
+        annotations:
+          summary: "Slow database queries"
+          description: "95th percentile database query time is {{ $value }}s"
+          runbook_url: "https://docs.easypay.com/runbooks/slow-database-queries"
+
+      # Cache Operation Performance Alert
+      - alert: SlowCacheOperations
+        expr: histogram_quantile(0.95, rate(easypay_cache_operation_duration_seconds_bucket[5m])) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+          service: easypay
+        annotations:
+          summary: "Slow cache operations"
+          description: "95th percentile cache operation time is {{ $value }}s"
+          runbook_url: "https://docs.easypay.com/runbooks/slow-cache-operations"
+
+      # Application Uptime Alert
+      - alert: ApplicationRestart
+        expr: increase(easypay_application_uptime_seconds[1m]) < 0
+        for: 0m
+        labels:
+          severity: info
+          service: easypay
+        annotations:
+          summary: "Application restarted"
+          description: "EasyPay application has been restarted"
+          runbook_url: "https://docs.easypay.com/runbooks/application-restart"
