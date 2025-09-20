@@ -4,7 +4,7 @@ version: '3.8'
 services:
   # Kong API Gateway
   kong:
-    image: kong:2.8-alpine
+    image: kong/kong:2.8-alpine
     environment:
       KONG_DATABASE: "off"
       KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
@@ -190,16 +190,12 @@ services:
 
   # ELK Stack for Log Aggregation
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.8.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
-      - bootstrap.memory_lock=true
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - bootstrap.memory_lock=false
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     restart: unless-stopped
@@ -208,21 +204,21 @@ services:
     deploy:
       resources:
         limits:
-          memory: 2G
-          cpus: '2.0'
-        reservations:
           memory: 1G
           cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
 
   logstash:
-    image: docker.elastic.co/logstash/logstash:8.8.0
+    image: docker.elastic.co/logstash/logstash:8.11.0
     ports:
       - "5044:5044"
       - "9600:9600"
     volumes:
       - ./config/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
     environment:
-      - LS_JAVA_OPTS=-Xmx512m -Xms512m
+      - LS_JAVA_OPTS=-Xmx256m -Xms256m
     depends_on:
       - elasticsearch
     restart: unless-stopped
@@ -231,19 +227,20 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1G
-          cpus: '1.0'
-        reservations:
           memory: 512M
           cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:8.8.0
+    image: docker.elastic.co/kibana/kibana:8.11.0
     ports:
       - "5601:5601"
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
       - SERVER_NAME=kibana
+      - SERVER_PUBLICBASEURL=http://localhost:5601
     depends_on:
       - elasticsearch
     restart: unless-stopped
@@ -252,11 +249,11 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1G
-          cpus: '1.0'
-        reservations:
           memory: 512M
           cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
 
   # Backup Service
   backup:

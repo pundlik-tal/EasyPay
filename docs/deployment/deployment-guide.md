@@ -23,6 +23,9 @@ This comprehensive guide covers deploying the EasyPay Payment Gateway in various
 - **Docker**: Version 20.10+
 - **Docker Compose**: Version 2.0+
 - **Memory**: Minimum 4GB RAM (8GB recommended for production)
+  - **Development**: 4GB RAM (optimized ELK stack)
+  - **Production**: 8GB RAM (optimized ELK stack)
+  - **Ultra-Light**: 2GB RAM (OpenSearch + Fluentd stack)
 - **Storage**: Minimum 20GB free space
 - **Network**: HTTPS-capable network access
 
@@ -103,8 +106,9 @@ KONG_PROXY_URL=https://api.easypay.com
 
 ### 1. Quick Start (Development)
 
+#### Standard Development Setup (Optimized ELK Stack)
 ```bash
-# Start all services
+# Start all services with optimized ELK stack
 docker-compose up -d
 
 # Check service status
@@ -113,6 +117,24 @@ docker-compose ps
 # View logs
 docker-compose logs -f easypay-api
 ```
+
+#### Ultra-Lightweight Development Setup (OpenSearch + Fluentd)
+```bash
+# Start all services with ultra-lightweight stack
+docker-compose -f docker-compose.light.yml up -d
+
+# Check service status
+docker-compose -f docker-compose.light.yml ps
+
+# View logs
+docker-compose -f docker-compose.light.yml logs -f easypay-api
+```
+
+#### Resource Usage Comparison
+| Configuration | Memory Usage | CPU Usage | Storage |
+|---------------|--------------|-----------|---------|
+| **Standard ELK** | ~1.3GB | Medium | ~2GB |
+| **Ultra-Light** | ~0.6GB | Low | ~1GB |
 
 ### 2. Production Deployment
 
@@ -378,7 +400,88 @@ echo "Backup completed: easypay_$DATE.sql.gz"
 
 ## Monitoring Setup
 
-### 1. Prometheus Configuration
+### 1. ELK Stack Configuration Options
+
+#### Standard ELK Stack (Optimized)
+The standard configuration uses optimized versions of Elasticsearch, Logstash, and Kibana with reduced memory allocation:
+
+```yaml
+# docker-compose.yml - Optimized ELK Stack
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    environment:
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"  # Reduced from 512MB
+      - bootstrap.memory_lock=false        # Disabled for lighter operation
+    deploy:
+      resources:
+        limits:
+          memory: 1G                       # Reduced from 2G
+          cpus: '1.0'                      # Reduced from 2.0
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    environment:
+      - LS_JAVA_OPTS=-Xmx128m -Xms128m    # Reduced from 256MB
+    deploy:
+      resources:
+        limits:
+          memory: 512M                     # Reduced from 1G
+          cpus: '0.5'                      # Reduced from 1.0
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    deploy:
+      resources:
+        limits:
+          memory: 512M                     # Reduced from 1G
+          cpus: '0.5'                      # Reduced from 1.0
+```
+
+#### Ultra-Lightweight Stack (OpenSearch + Fluentd)
+For maximum resource efficiency, use the ultra-lightweight configuration:
+
+```yaml
+# docker-compose.light.yml - Ultra-Lightweight Stack
+services:
+  opensearch:
+    image: opensearchproject/opensearch:2.11.0
+    environment:
+      - "OPENSEARCH_JAVA_OPTS=-Xms256m -Xmx256m"
+      - plugins.security.disabled=true
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2.11.0
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+
+  fluentd:
+    image: fluent/fluentd:v1.16-debian-1
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.25'
+```
+
+#### Choosing the Right Configuration
+
+| Use Case | Configuration | Memory | CPU | Features |
+|----------|---------------|--------|-----|----------|
+| **Development** | Standard ELK | 1.3GB | Medium | Full features |
+| **Production** | Standard ELK | 1.3GB | Medium | Full features |
+| **Resource Constrained** | Ultra-Light | 0.6GB | Low | Core features |
+| **Testing** | Ultra-Light | 0.6GB | Low | Core features |
+
+### 2. Prometheus Configuration
 
 ```yaml
 # config/prometheus.yml

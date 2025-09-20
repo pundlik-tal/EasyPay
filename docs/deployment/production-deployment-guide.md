@@ -10,7 +10,10 @@ This guide provides comprehensive instructions for deploying the EasyPay Payment
 
 - **Operating System**: Linux (Ubuntu 20.04+ recommended)
 - **CPU**: Minimum 4 cores, 8 cores recommended
-- **Memory**: Minimum 8GB RAM, 16GB recommended
+- **Memory**: 
+  - **Minimum**: 8GB RAM (optimized ELK stack)
+  - **Recommended**: 16GB RAM (optimized ELK stack)
+  - **Ultra-Light**: 4GB RAM (OpenSearch + Fluentd stack)
 - **Storage**: Minimum 100GB SSD, 500GB recommended
 - **Network**: Stable internet connection with static IP
 
@@ -354,7 +357,8 @@ Import production dashboards:
 
 ### 3. Log Aggregation
 
-Configure ELK stack for log aggregation:
+#### Standard ELK Stack (Optimized)
+Configure optimized ELK stack for log aggregation:
 
 ```bash
 # Check Elasticsearch status
@@ -362,7 +366,35 @@ curl http://localhost:9200/_cluster/health
 
 # Access Kibana
 open http://localhost:5601
+
+# Check resource usage
+docker stats elasticsearch logstash kibana
 ```
+
+#### Ultra-Lightweight Stack (OpenSearch + Fluentd)
+For resource-constrained environments:
+
+```bash
+# Check OpenSearch status
+curl http://localhost:9200/_cluster/health
+
+# Access OpenSearch Dashboards
+open http://localhost:5601
+
+# Check Fluentd status
+curl http://localhost:24224/api/plugins.json
+
+# Check resource usage
+docker stats opensearch opensearch-dashboards fluentd
+```
+
+#### Resource Comparison
+| Component | Standard ELK | Ultra-Light | Memory Savings |
+|-----------|--------------|-------------|----------------|
+| **Search Engine** | Elasticsearch (1GB) | OpenSearch (512MB) | 50% |
+| **Log Processor** | Logstash (512MB) | Fluentd (128MB) | 75% |
+| **Dashboard** | Kibana (512MB) | OpenSearch Dashboards (256MB) | 50% |
+| **Total** | 2GB | 896MB | 55% |
 
 ## Backup and Recovery
 

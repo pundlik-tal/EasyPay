@@ -568,11 +568,25 @@ services:
 
 #### Log Aggregation
 
-**ELK Stack:**
-- **Elasticsearch**: Log storage and search
-- **Logstash**: Log processing
-- **Kibana**: Log visualization
+**Standard ELK Stack (Optimized):**
+- **Elasticsearch**: Log storage and search (optimized: 256MB heap)
+- **Logstash**: Log processing (optimized: 128MB heap)
+- **Kibana**: Log visualization (optimized: 512MB limit)
 - **Filebeat**: Log shipping
+
+**Ultra-Lightweight Stack (OpenSearch + Fluentd):**
+- **OpenSearch**: Log storage and search (256MB heap)
+- **Fluentd**: Log processing (128MB limit)
+- **OpenSearch Dashboards**: Log visualization (256MB limit)
+- **Filebeat**: Log shipping
+
+**Resource Comparison:**
+| Component | Standard ELK | Ultra-Light | Memory Savings |
+|-----------|--------------|-------------|----------------|
+| **Search Engine** | Elasticsearch (1GB) | OpenSearch (512MB) | 50% |
+| **Log Processor** | Logstash (512MB) | Fluentd (128MB) | 75% |
+| **Dashboard** | Kibana (512MB) | OpenSearch Dashboards (256MB) | 50% |
+| **Total** | 2GB | 896MB | 55% |
 
 #### Distributed Tracing
 

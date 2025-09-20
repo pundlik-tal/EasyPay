@@ -38,9 +38,22 @@ A modern, scalable payment gateway system built with FastAPI, designed to handle
    ```
 
 3. **Start with Docker Compose**
+   
+   **Standard Development Setup (Optimized ELK Stack)**:
    ```bash
    docker-compose up -d
    ```
+   
+   **Ultra-Lightweight Setup (OpenSearch + Fluentd)**:
+   ```bash
+   docker-compose -f docker-compose.light.yml up -d
+   ```
+   
+   **Resource Usage Comparison**:
+   | Configuration | Memory Usage | CPU Usage | Storage |
+   |---------------|--------------|-----------|---------|
+   | **Standard ELK** | ~1.3GB | Medium | ~2GB |
+   | **Ultra-Light** | ~0.6GB | Low | ~1GB |
 
 4. **Or run locally**
    ```bash
@@ -224,6 +237,16 @@ Access the Grafana dashboard at http://localhost:3000 (admin/admin) to view:
 - Payment processing statistics
 - System resource usage
 - Error rates and response times
+
+### ELK Stack Optimization
+
+The system offers multiple ELK stack configurations for different resource requirements:
+
+- **Standard ELK Stack**: Optimized Elasticsearch, Logstash, and Kibana
+- **Ultra-Lightweight Stack**: OpenSearch + Fluentd for maximum efficiency
+- **Production ELK Stack**: Production-optimized configurations
+
+For detailed information about ELK stack optimization, see [ELK Stack Optimization Guide](docs/configuration/elk-stack-optimization.md).
 
 ## Security
 
