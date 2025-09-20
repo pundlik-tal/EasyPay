@@ -1,0 +1,115 @@
+EasyPay Test Coverage Report
+==================================================
+
+Test Suite: Basic Tests
+Status: FAILED
+Exit Code: 4
+STDOUT:
+
+STDERR:
+C:\Users\PundlikR\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\config\__init__.py:331: PluggyTeardownRaisedWarning: A plugin raised an exception during an old-style hookwrapper teardown.
+Plugin: helpconfig, Hook: pytest_cmdline_parse
+ConftestImportFailure: ImportError: cannot import name 'Base' from partially initialized module 'src.infrastructure.database' (most likely due to a circular import) (C:\Users\PundlikR\Documents\hackathon\EasyPay\src\infrastructure\database\__init__.py) (from C:\Users\PundlikR\Documents\hackathon\EasyPay\tests\conftest.py)
+For more information see https://pluggy.readthedocs.io/en/stable/api_reference.html#pluggy.PluggyTeardownRaisedWarning
+  config = pluginmanager.hook.pytest_cmdline_parse(
+ImportError while loading conftest 'C:\Users\PundlikR\Documents\hackathon\EasyPay\tests\conftest.py'.
+tests\conftest.py:16: in <module>
+    from src.main import app
+src\main.py:16: in <module>
+    from src.infrastructure.database import init_database
+src\infrastructure\database\__init__.py:28: in <module>
+    from .data_validator import (
+src\infrastructure\database\data_validator.py:19: in <module>
+    from src.core.models.payment import Payment, PaymentStatus, PaymentMethod
+src\core\models\__init__.py:5: in <module>
+    from .payment import Payment
+src\core\models\payment.py:17: in <module>
+    from src.infrastructure.database import Base
+E   ImportError: cannot import name 'Base' from partially initialized module 'src.infrastructure.database' (most likely due to a circular import) (C:\Users\PundlikR\Documents\hackathon\EasyPay\src\infrastructure\database\__init__.py)
+
+--------------------------------------------------
+
+Test Suite: Unit Tests
+Status: FAILED
+Exit Code: 4
+STDOUT:
+
+STDERR:
+C:\Users\PundlikR\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\config\__init__.py:331: PluggyTeardownRaisedWarning: A plugin raised an exception during an old-style hookwrapper teardown.
+Plugin: helpconfig, Hook: pytest_cmdline_parse
+ConftestImportFailure: ImportError: cannot import name 'Base' from partially initialized module 'src.infrastructure.database' (most likely due to a circular import) (C:\Users\PundlikR\Documents\hackathon\EasyPay\src\infrastructure\database\__init__.py) (from C:\Users\PundlikR\Documents\hackathon\EasyPay\tests\conftest.py)
+For more information see https://pluggy.readthedocs.io/en/stable/api_reference.html#pluggy.PluggyTeardownRaisedWarning
+  config = pluginmanager.hook.pytest_cmdline_parse(
+ImportError while loading conftest 'C:\Users\PundlikR\Documents\hackathon\EasyPay\tests\conftest.py'.
+tests\conftest.py:16: in <module>
+    from src.main import app
+src\main.py:16: in <module>
+    from src.infrastructure.database import init_database
+src\infrastructure\database\__init__.py:28: in <module>
+    from .data_validator import (
+src\infrastructure\database\data_validator.py:19: in <module>
+    from src.core.models.payment import Payment, PaymentStatus, PaymentMethod
+src\core\models\__init__.py:5: in <module>
+    from .payment import Payment
+src\core\models\payment.py:17: in <module>
+    from src.infrastructure.database import Base
+E   ImportError: cannot import name 'Base' from partially initialized module 'src.infrastructure.database' (most likely due to a circular import) (C:\Users\PundlikR\Documents\hackathon\EasyPay\src\infrastructure\database\__init__.py)
+
+--------------------------------------------------
+
+Test Suite: Integration Tests
+Status: FAILED
+Exit Code: 4
+STDOUT:
+
+STDERR:
+C:\Users\PundlikR\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\config\__init__.py:331: PluggyTeardownRaisedWarning: A plugin raised an exception during an old-style hookwrapper teardown.
+Plugin: helpconfig, Hook: pytest_cmdline_parse
+ConftestImportFailure: ImportError: cannot import name 'Base' from partially initialized module 'src.infrastructure.database' (most likely due to a circular import) (C:\Users\PundlikR\Documents\hackathon\EasyPay\src\infrastructure\database\__init__.py) (from C:\Users\PundlikR\Documents\hackathon\EasyPay\tests\conftest.py)
+For more information see https://pluggy.readthedocs.io/en/stable/api_reference.html#pluggy.PluggyTeardownRaisedWarning
+  config = pluginmanager.hook.pytest_cmdline_parse(
+ImportError while loading conftest 'C:\Users\PundlikR\Documents\hackathon\EasyPay\tests\conftest.py'.
+tests\conftest.py:16: in <module>
+    from src.main import app
+src\main.py:16: in <module>
+    from src.infrastructure.database import init_database
+src\infrastructure\database\__init__.py:28: in <module>
+    from .data_validator import (
+src\infrastructure\database\data_validator.py:19: in <module>
+    from src.core.models.payment import Payment, PaymentStatus, PaymentMethod
+src\core\models\__init__.py:5: in <module>
+    from .payment import Payment
+src\core\models\payment.py:17: in <module>
+    from src.infrastructure.database import Base
+E   ImportError: cannot import name 'Base' from partially initialized module 'src.infrastructure.database' (most likely due to a circular import) (C:\Users\PundlikR\Documents\hackathon\EasyPay\src\infrastructure\database\__init__.py)
+
+--------------------------------------------------
+
+Test Suite: Full Test Suite with Coverage
+Status: FAILED
+Exit Code: 4
+STDOUT:
+
+STDERR:
+C:\Users\PundlikR\AppData\Local\Programs\Python\Python311\Lib\site-packages\_pytest\config\__init__.py:331: PluggyTeardownRaisedWarning: A plugin raised an exception during an old-style hookwrapper teardown.
+Plugin: helpconfig, Hook: pytest_cmdline_parse
+ConftestImportFailure: ImportError: cannot import name 'Base' from partially initialized module 'src.infrastructure.database' (most likely due to a circular import) (C:\Users\PundlikR\Documents\hackathon\EasyPay\src\infrastructure\database\__init__.py) (from C:\Users\PundlikR\Documents\hackathon\EasyPay\tests\conftest.py)
+For more information see https://pluggy.readthedocs.io/en/stable/api_reference.html#pluggy.PluggyTeardownRaisedWarning
+  config = pluginmanager.hook.pytest_cmdline_parse(
+ImportError while loading conftest 'C:\Users\PundlikR\Documents\hackathon\EasyPay\tests\conftest.py'.
+tests\conftest.py:16: in <module>
+    from src.main import app
+src\main.py:16: in <module>
+    from src.infrastructure.database import init_database
+src\infrastructure\database\__init__.py:28: in <module>
+    from .data_validator import (
+src\infrastructure\database\data_validator.py:19: in <module>
+    from src.core.models.payment import Payment, PaymentStatus, PaymentMethod
+src\core\models\__init__.py:5: in <module>
+    from .payment import Payment
+src\core\models\payment.py:17: in <module>
+    from src.infrastructure.database import Base
+E   ImportError: cannot import name 'Base' from partially initialized module 'src.infrastructure.database' (most likely due to a circular import) (C:\Users\PundlikR\Documents\hackathon\EasyPay\src\infrastructure\database\__init__.py)
+
+--------------------------------------------------
+

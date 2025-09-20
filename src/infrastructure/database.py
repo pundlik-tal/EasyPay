@@ -2,15 +2,20 @@
 EasyPay Payment Gateway - Database Infrastructure
 """
 import os
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Optional
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import QueuePool
 
+from src.infrastructure.database.base import Base
+
 from src.core.exceptions import DatabaseError
+from src.infrastructure.database.transaction_manager import init_transaction_manager, close_transaction_manager
+from src.infrastructure.database.migration_manager import MigrationManager
+from src.infrastructure.database.data_validator import DataValidator, ValidationLevel
+from src.infrastructure.database.error_handler import DatabaseErrorHandler
 
 # Database configuration
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://easypay:password@localhost:5432/easypay")
@@ -33,8 +38,12 @@ AsyncSessionLocal = sessionmaker(
     expire_on_commit=False
 )
 
-# Create base class for models
-Base = declarative_base()
+# Note: Base is imported from src.infrastructure.database.base
+
+# Global instances
+_migration_manager: Optional[MigrationManager] = None
+_data_validator: Optional[DataValidator] = None
+_error_handler: Optional[DatabaseErrorHandler] = None
 
 
 async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
@@ -69,6 +78,22 @@ async def init_database() -> None:
         async with async_engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         
+        # Initialize transaction manager
+        init_transaction_manager(async_engine)
+        
+        # Initialize migration manager
+        global _migration_manager
+        _migration_manager = MigrationManager(async_engine)
+        await _migration_manager.init_migration_tracking()
+        
+        # Initialize data validator
+        global _data_validator
+        _data_validator = DataValidator(async_engine, ValidationLevel.MODERATE)
+        
+        # Initialize error handler
+        global _error_handler
+        _error_handler = DatabaseErrorHandler(async_engine)
+        
         # Log successful initialization
         import logging
         logger = logging.getLogger(__name__)
@@ -86,6 +111,16 @@ async def close_database() -> None:
         DatabaseError: If database closure fails
     """
     try:
+        # Close transaction manager
+        await close_transaction_manager()
+        
+        # Clear global instances
+        global _migration_manager, _data_validator, _error_handler
+        _migration_manager = None
+        _data_validator = None
+        _error_handler = None
+        
+        # Dispose engine
         await async_engine.dispose()
         
         # Log successful closure
@@ -95,3 +130,57 @@ async def close_database() -> None:
         
     except Exception as e:
         raise DatabaseError(f"Failed to close database connections: {str(e)}")
+
+
+def get_migration_manager() -> MigrationManager:
+    """
+    Get the global migration manager instance.
+    
+    Returns:
+        MigrationManager: Global migration manager
+        
+    Raises:
+        DatabaseError: If migration manager is not initialized
+    """
+    global _migration_manager
+    
+    if _migration_manager is None:
+        raise DatabaseError("Migration manager not initialized")
+    
+    return _migration_manager
+
+
+def get_data_validator() -> DataValidator:
+    """
+    Get the global data validator instance.
+    
+    Returns:
+        DataValidator: Global data validator
+        
+    Raises:
+        DatabaseError: If data validator is not initialized
+    """
+    global _data_validator
+    
+    if _data_validator is None:
+        raise DatabaseError("Data validator not initialized")
+    
+    return _data_validator
+
+
+def get_error_handler() -> DatabaseErrorHandler:
+    """
+    Get the global error handler instance.
+    
+    Returns:
+        DatabaseErrorHandler: Global error handler
+        
+    Raises:
+        DatabaseError: If error handler is not initialized
+    """
+    global _error_handler
+    
+    if _error_handler is None:
+        raise DatabaseError("Error handler not initialized")
+    
+    return _error_handler

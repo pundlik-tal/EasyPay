@@ -174,3 +174,27 @@ class WebhookNotFoundError(NotFoundError):
             message=message,
             error_code=error_code
         )
+
+
+class TransactionError(DatabaseError):
+    """Raised when transaction operations fail."""
+    
+    def __init__(self, message: str, error_code: str = "transaction_error"):
+        super().__init__(
+            message=message,
+            error_code=error_code,
+            error_type="transaction_error",
+            status_code=500
+        )
+
+
+class MigrationError(DatabaseError):
+    """Raised when migration operations fail."""
+    
+    def __init__(self, message: str, error_code: str = "migration_error"):
+        super().__init__(
+            message=message,
+            error_code=error_code,
+            error_type="migration_error",
+            status_code=500
+        )

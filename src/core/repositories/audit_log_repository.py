@@ -528,3 +528,4 @@ class AuditLogRepository:
         except Exception as e:
             await self.session.rollback()
             raise DatabaseError(f"Failed to cleanup old logs: {str(e)}")
+
