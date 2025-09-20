@@ -15,7 +15,7 @@ from starlette.responses import Response
 from src.core.exceptions import EasyPayException
 from src.infrastructure.database import init_database
 from src.infrastructure.cache import init_cache
-from src.api.v1.endpoints import health, payments, admin
+from src.api.v1.endpoints import health, payments, admin, auth, version
 from src.infrastructure.monitoring import setup_logging
 
 # Prometheus metrics
@@ -59,12 +59,79 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 # Create FastAPI application
 app = FastAPI(
     title="EasyPay Payment Gateway",
-    description="A modern payment gateway system built with FastAPI",
-    version="0.1.0",
+    description="""
+    ## EasyPay Payment Gateway API
+    
+    A modern, secure payment gateway system built with FastAPI that provides:
+    
+    ### Core Features
+    - **Payment Processing**: Charge credit cards, process refunds, and manage transactions
+    - **Authentication**: API key management with JWT tokens and role-based access control
+    - **Webhook Handling**: Process Authorize.net webhooks for real-time payment updates
+    - **Monitoring**: Health checks, metrics, and comprehensive logging
+    
+    ### Authentication
+    All API endpoints require authentication using either:
+    - **API Keys**: Direct API key authentication for server-to-server communication
+    - **JWT Tokens**: Token-based authentication for web applications
+    
+    ### Rate Limiting
+    - Default: 100 requests/minute, 1000/hour, 10000/day
+    - Configurable per API key
+    - IP-based whitelisting and blacklisting support
+    
+    ### Error Handling
+    All errors follow a consistent format with error codes, messages, and timestamps.
+    
+    ### Support
+    For API support, please contact: support@easypay.com
+    """,
+    version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
     openapi_url="/openapi.json",
-    lifespan=lifespan
+    lifespan=lifespan,
+    contact={
+        "name": "EasyPay Support",
+        "email": "support@easypay.com",
+        "url": "https://docs.easypay.com"
+    },
+    license_info={
+        "name": "MIT License",
+        "url": "https://opensource.org/licenses/MIT"
+    },
+    servers=[
+        {
+            "url": "https://api.easypay.com",
+            "description": "Production server"
+        },
+        {
+            "url": "https://api-sandbox.easypay.com", 
+            "description": "Sandbox server"
+        },
+        {
+            "url": "http://localhost:8000",
+            "description": "Development server"
+        }
+    ],
+    openapi_tags=[
+        {
+            "name": "health",
+            "description": "Health check endpoints for monitoring and load balancers"
+        },
+        {
+            "name": "authentication",
+            "description": "API key management, JWT token generation, and authentication"
+        },
+        {
+            "name": "payments",
+            "description": "Payment processing, refunds, cancellations, and transaction management"
+        },
+        {
+            "name": "admin",
+            "description": "Administrative endpoints for system management"
+        }
+    ]
 )
 
 # Add middleware
@@ -164,8 +231,10 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 # Include routers
 app.include_router(health.router, prefix="/health", tags=["health"])
+app.include_router(auth.router, prefix="/api/v1/auth", tags=["authentication"])
 app.include_router(payments.router, prefix="/api/v1/payments", tags=["payments"])
 app.include_router(admin.router, prefix="/api/v1", tags=["admin"])
+app.include_router(version.router, prefix="/api/v1", tags=["version"])
 
 
 # Prometheus metrics endpoint

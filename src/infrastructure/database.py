@@ -9,13 +9,13 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import QueuePool
 
-from src.infrastructure.database.base import Base
+from .db_components.base import Base
 
 from src.core.exceptions import DatabaseError
-from src.infrastructure.database.transaction_manager import init_transaction_manager, close_transaction_manager
-from src.infrastructure.database.migration_manager import MigrationManager
-from src.infrastructure.database.data_validator import DataValidator, ValidationLevel
-from src.infrastructure.database.error_handler import DatabaseErrorHandler
+from .db_components.transaction_manager import init_transaction_manager, close_transaction_manager
+from .db_components.migration_manager import MigrationManager
+from .db_components.data_validator import DataValidator, ValidationLevel
+from .db_components.error_handler import DatabaseErrorHandler
 
 # Database configuration
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://easypay:password@localhost:5432/easypay")

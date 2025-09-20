@@ -6,6 +6,7 @@ A modern, scalable payment gateway system built with FastAPI, designed to handle
 
 - **Payment Processing**: Secure credit card processing via Authorize.net
 - **RESTful API**: Clean, well-documented API endpoints
+- **API Gateway**: Kong-based gateway with rate limiting, CORS, and monitoring
 - **Authentication**: API key and JWT-based authentication
 - **Webhooks**: Real-time payment notifications
 - **Monitoring**: Comprehensive metrics and health checks
@@ -62,6 +63,7 @@ Once the application is running, you can access:
 - **ReDoc**: http://localhost:8000/redoc
 - **Health Check**: http://localhost:8000/health
 - **Metrics**: http://localhost:8000/metrics
+- **Kong Admin API**: http://localhost:8001 (for gateway management)
 
 ## API Endpoints
 
@@ -96,6 +98,7 @@ Once the application is running, you can access:
 
 ### Docker Services
 
+- **kong**: Kong API Gateway (proxy and admin)
 - **easypay-api**: Main FastAPI application
 - **postgres**: PostgreSQL database
 - **redis**: Redis cache
@@ -165,6 +168,32 @@ flake8 src/ tests/
 # Type checking
 mypy src/
 ```
+
+## API Gateway
+
+### Kong Configuration
+
+The application uses Kong as an API Gateway providing:
+
+- **Rate Limiting**: Configurable limits per endpoint
+- **CORS Handling**: Cross-origin request management
+- **Request Logging**: Comprehensive request/response logging
+- **Load Balancing**: Backend service distribution
+- **Health Checks**: Service health monitoring
+- **Prometheus Metrics**: Gateway-level metrics
+- **Correlation ID**: Request tracking across services
+
+### Gateway Endpoints
+
+- **Proxy Port**: 8000 (external API access)
+- **Admin Port**: 8001 (gateway management)
+- **Backend Port**: 8002 (internal API service)
+
+### Rate Limits
+
+- **Payment API**: 100/minute, 1000/hour, 10000/day
+- **Admin API**: 50/minute, 500/hour, 5000/day
+- **Health/Metrics**: No rate limiting
 
 ## Monitoring
 

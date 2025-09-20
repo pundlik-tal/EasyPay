@@ -1,9 +1,36 @@
 services:
-  # EasyPay API Service
+  # Kong API Gateway
+  kong:
+    image: kong:2.8-alpine
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: 0.0.0.0:8001
+      KONG_PROXY_LISTEN: 0.0.0.0:8000
+    ports:
+      - "8000:8000"  # Proxy port
+      - "8001:8001"  # Admin API port
+    volumes:
+      - ./kong/kong.yml:/kong/declarative/kong.yml:ro
+    depends_on:
+      - easypay-api
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
+  # EasyPay API Service (Internal)
   easypay-api:
     build: .
     ports:
-      - "8000:8000"
+      - "8002:8000"  # Internal port for Kong to proxy to
     environment:
       - DATABASE_URL=postgresql://easypay:password@postgres:5432/easypay
       - REDIS_URL=redis://redis:6379/0
@@ -18,6 +45,11 @@ services:
     volumes:
       - ./src:/app/src
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # PostgreSQL Database
   postgres:
@@ -41,6 +73,11 @@ services:
     volumes:
       - redis_data:/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Prometheus Monitoring
   prometheus:

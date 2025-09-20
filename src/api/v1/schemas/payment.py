@@ -13,17 +13,71 @@ class PaymentCreateRequest(BaseModel):
     """Request schema for creating a new payment."""
     model_config = ConfigDict(
         json_schema_extra={
-            "example": {
-                "amount": "10.00",
-                "currency": "USD",
-                "payment_method": "credit_card",
-                "customer_id": "cust_123456789",
-                "customer_email": "customer@example.com",
-                "customer_name": "John Doe",
-                "card_token": "tok_123456789",
-                "description": "Payment for services",
-                "metadata": {"order_id": "order_123", "product": "premium_plan"}
-            }
+            "examples": [
+                {
+                    "summary": "Basic Credit Card Payment",
+                    "description": "A simple credit card payment with customer information",
+                    "value": {
+                        "amount": "25.99",
+                        "currency": "USD",
+                        "payment_method": "credit_card",
+                        "customer_id": "cust_123456789",
+                        "customer_email": "john.doe@example.com",
+                        "customer_name": "John Doe",
+                        "card_token": "tok_visa_4242",
+                        "description": "Premium subscription payment",
+                        "metadata": {
+                            "order_id": "order_2024_001",
+                            "product": "premium_plan",
+                            "subscription_id": "sub_123"
+                        },
+                        "is_test": True
+                    }
+                },
+                {
+                    "summary": "High-Value Payment",
+                    "description": "A high-value payment with additional metadata",
+                    "value": {
+                        "amount": "999.99",
+                        "currency": "USD",
+                        "payment_method": "credit_card",
+                        "customer_id": "cust_enterprise_001",
+                        "customer_email": "enterprise@company.com",
+                        "customer_name": "Enterprise Customer",
+                        "card_token": "tok_amex_1234",
+                        "description": "Enterprise license purchase",
+                        "metadata": {
+                            "order_id": "enterprise_2024_001",
+                            "product": "enterprise_license",
+                            "license_type": "annual",
+                            "seats": 100,
+                            "sales_rep": "rep_001"
+                        },
+                        "is_test": False
+                    }
+                },
+                {
+                    "summary": "Subscription Payment",
+                    "description": "A recurring subscription payment",
+                    "value": {
+                        "amount": "9.99",
+                        "currency": "USD",
+                        "payment_method": "credit_card",
+                        "customer_id": "cust_subscriber_001",
+                        "customer_email": "subscriber@example.com",
+                        "customer_name": "Jane Smith",
+                        "card_token": "tok_mastercard_5555",
+                        "description": "Monthly subscription renewal",
+                        "metadata": {
+                            "subscription_id": "sub_monthly_001",
+                            "plan": "basic_monthly",
+                            "billing_cycle": "monthly",
+                            "renewal_date": "2024-02-01"
+                        },
+                        "is_test": True
+                    }
+                }
+            ]
         }
     )
     
@@ -113,27 +167,105 @@ class PaymentResponse(BaseModel):
     """Response schema for payment data."""
     model_config = ConfigDict(
         json_schema_extra={
-            "example": {
-                "id": "550e8400-e29b-41d4-a716-446655440000",
-                "external_id": "pay_123456789",
-                "amount": "10.00",
-                "currency": "USD",
-                "status": "captured",
-                "payment_method": "credit_card",
-                "customer_id": "cust_123456789",
-                "customer_email": "customer@example.com",
-                "customer_name": "John Doe",
-                "card_last_four": "4242",
-                "card_brand": "visa",
-                "description": "Payment for services",
-                "metadata": {"order_id": "order_123"},
-                "refunded_amount": "0.00",
-                "refund_count": 0,
-                "created_at": "2024-01-01T00:00:00Z",
-                "updated_at": "2024-01-01T00:00:00Z",
-                "processed_at": "2024-01-01T00:00:00Z",
-                "is_test": False
-            }
+            "examples": [
+                {
+                    "summary": "Successful Payment",
+                    "description": "A successfully processed payment",
+                    "value": {
+                        "id": "550e8400-e29b-41d4-a716-446655440000",
+                        "external_id": "pay_2024_001",
+                        "amount": "25.99",
+                        "currency": "USD",
+                        "status": "captured",
+                        "payment_method": "credit_card",
+                        "customer_id": "cust_123456789",
+                        "customer_email": "john.doe@example.com",
+                        "customer_name": "John Doe",
+                        "card_last_four": "4242",
+                        "card_brand": "visa",
+                        "description": "Premium subscription payment",
+                        "metadata": {
+                            "order_id": "order_2024_001",
+                            "product": "premium_plan",
+                            "subscription_id": "sub_123"
+                        },
+                        "processor_response_code": "1",
+                        "processor_response_message": "This transaction has been approved",
+                        "processor_transaction_id": "1234567890",
+                        "refunded_amount": "0.00",
+                        "refund_count": 0,
+                        "created_at": "2024-01-01T12:00:00Z",
+                        "updated_at": "2024-01-01T12:00:05Z",
+                        "processed_at": "2024-01-01T12:00:05Z",
+                        "settled_at": "2024-01-02T08:00:00Z",
+                        "is_test": True
+                    }
+                },
+                {
+                    "summary": "Failed Payment",
+                    "description": "A payment that failed processing",
+                    "value": {
+                        "id": "550e8400-e29b-41d4-a716-446655440001",
+                        "external_id": "pay_2024_002",
+                        "amount": "100.00",
+                        "currency": "USD",
+                        "status": "failed",
+                        "payment_method": "credit_card",
+                        "customer_id": "cust_123456790",
+                        "customer_email": "jane.smith@example.com",
+                        "customer_name": "Jane Smith",
+                        "card_last_four": "5555",
+                        "card_brand": "mastercard",
+                        "description": "Product purchase",
+                        "metadata": {
+                            "order_id": "order_2024_002",
+                            "product": "physical_good"
+                        },
+                        "processor_response_code": "05",
+                        "processor_response_message": "Do not honor",
+                        "processor_transaction_id": None,
+                        "refunded_amount": None,
+                        "refund_count": 0,
+                        "created_at": "2024-01-01T12:05:00Z",
+                        "updated_at": "2024-01-01T12:05:02Z",
+                        "processed_at": "2024-01-01T12:05:02Z",
+                        "settled_at": None,
+                        "is_test": True
+                    }
+                },
+                {
+                    "summary": "Refunded Payment",
+                    "description": "A payment that has been partially refunded",
+                    "value": {
+                        "id": "550e8400-e29b-41d4-a716-446655440002",
+                        "external_id": "pay_2024_003",
+                        "amount": "50.00",
+                        "currency": "USD",
+                        "status": "captured",
+                        "payment_method": "credit_card",
+                        "customer_id": "cust_123456791",
+                        "customer_email": "customer@example.com",
+                        "customer_name": "Customer Name",
+                        "card_last_four": "1234",
+                        "card_brand": "amex",
+                        "description": "Service payment",
+                        "metadata": {
+                            "order_id": "order_2024_003",
+                            "service": "consulting"
+                        },
+                        "processor_response_code": "1",
+                        "processor_response_message": "This transaction has been approved",
+                        "processor_transaction_id": "0987654321",
+                        "refunded_amount": "25.00",
+                        "refund_count": 1,
+                        "created_at": "2024-01-01T12:10:00Z",
+                        "updated_at": "2024-01-01T14:30:00Z",
+                        "processed_at": "2024-01-01T12:10:05Z",
+                        "settled_at": "2024-01-02T08:00:00Z",
+                        "is_test": True
+                    }
+                }
+            ]
         }
     )
     

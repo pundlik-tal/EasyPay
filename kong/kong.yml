@@ -1,0 +1,312 @@
+_format_version: "3.0"
+
+# Services - Define backend services
+services:
+  - name: easypay-api
+    url: http://easypay-api:8000
+    routes:
+      - name: easypay-health
+        paths:
+          - /health
+          - /health/
+          - /health/ready
+          - /health/live
+          - /health/detailed
+        methods:
+          - GET
+        strip_path: false
+        plugins:
+          - name: cors
+            config:
+              origins:
+                - "*"
+              methods:
+                - GET
+                - POST
+                - PUT
+                - DELETE
+                - OPTIONS
+              headers:
+                - Accept
+                - Accept-Version
+                - Content-Length
+                - Content-MD5
+                - Content-Type
+                - Date
+                - X-Auth-Token
+                - X-Correlation-ID
+              exposed_headers:
+                - X-Auth-Token
+                - X-Correlation-ID
+              credentials: true
+              max_age: 3600
+              preflight_continue: false
+          - name: request-logging
+            config:
+              log_body: true
+              log_args: true
+              log_headers: true
+              log_response_body: true
+          - name: prometheus
+            config:
+              per_consumer: true
+              status_code_metrics: true
+              latency_metrics: true
+              bandwidth_metrics: true
+              upstream_health_metrics: true
+      - name: easypay-payments
+        paths:
+          - /api/v1/payments
+        methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        strip_path: false
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 100
+              hour: 1000
+              day: 10000
+              policy: redis
+              redis_host: redis
+              redis_port: 6379
+              redis_password: ""
+              redis_database: 1
+              hide_client_headers: false
+              error_code: 429
+              error_message: "API rate limit exceeded"
+          - name: cors
+            config:
+              origins:
+                - "*"
+              methods:
+                - GET
+                - POST
+                - PUT
+                - DELETE
+                - OPTIONS
+              headers:
+                - Accept
+                - Accept-Version
+                - Content-Length
+                - Content-MD5
+                - Content-Type
+                - Date
+                - X-Auth-Token
+                - X-Correlation-ID
+                - Authorization
+              exposed_headers:
+                - X-Auth-Token
+                - X-Correlation-ID
+              credentials: true
+              max_age: 3600
+              preflight_continue: false
+          - name: request-logging
+            config:
+              log_body: true
+              log_args: true
+              log_headers: true
+              log_response_body: true
+          - name: prometheus
+            config:
+              per_consumer: true
+              status_code_metrics: true
+              latency_metrics: true
+              bandwidth_metrics: true
+              upstream_health_metrics: true
+          - name: response-transformer
+            config:
+              add:
+                headers:
+                  - "X-Response-Time:$(latency_ms)ms"
+                  - "X-Kong-Upstream-Latency:$(upstream_latency_ms)ms"
+          - name: correlation-id
+            config:
+              header_name: X-Correlation-ID
+              echo_downstream: true
+              generator: uuid#counter
+      - name: easypay-admin
+        paths:
+          - /api/v1/admin
+        methods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        strip_path: false
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 50
+              hour: 500
+              day: 5000
+              policy: redis
+              redis_host: redis
+              redis_port: 6379
+              redis_password: ""
+              redis_database: 1
+              hide_client_headers: false
+              error_code: 429
+              error_message: "Admin API rate limit exceeded"
+          - name: cors
+            config:
+              origins:
+                - "*"
+              methods:
+                - GET
+                - POST
+                - PUT
+                - DELETE
+                - OPTIONS
+              headers:
+                - Accept
+                - Accept-Version
+                - Content-Length
+                - Content-MD5
+                - Content-Type
+                - Date
+                - X-Auth-Token
+                - X-Correlation-ID
+                - Authorization
+              exposed_headers:
+                - X-Auth-Token
+                - X-Correlation-ID
+              credentials: true
+              max_age: 3600
+              preflight_continue: false
+          - name: request-logging
+            config:
+              log_body: true
+              log_args: true
+              log_headers: true
+              log_response_body: true
+          - name: prometheus
+            config:
+              per_consumer: true
+              status_code_metrics: true
+              latency_metrics: true
+              bandwidth_metrics: true
+              upstream_health_metrics: true
+          - name: response-transformer
+            config:
+              add:
+                headers:
+                  - "X-Response-Time:$(latency_ms)ms"
+                  - "X-Kong-Upstream-Latency:$(upstream_latency_ms)ms"
+          - name: correlation-id
+            config:
+              header_name: X-Correlation-ID
+              echo_downstream: true
+              generator: uuid#counter
+      - name: easypay-metrics
+        paths:
+          - /metrics
+        methods:
+          - GET
+        strip_path: false
+        plugins:
+          - name: cors
+            config:
+              origins:
+                - "*"
+              methods:
+                - GET
+              headers:
+                - Accept
+                - Content-Type
+              credentials: false
+              max_age: 3600
+          - name: request-logging
+            config:
+              log_body: false
+              log_args: true
+              log_headers: true
+              log_response_body: false
+          - name: prometheus
+            config:
+              per_consumer: false
+              status_code_metrics: true
+              latency_metrics: true
+              bandwidth_metrics: true
+              upstream_health_metrics: true
+      - name: easypay-docs
+        paths:
+          - /docs
+          - /redoc
+          - /openapi.json
+        methods:
+          - GET
+        strip_path: false
+        plugins:
+          - name: cors
+            config:
+              origins:
+                - "*"
+              methods:
+                - GET
+              headers:
+                - Accept
+                - Content-Type
+              credentials: false
+              max_age: 3600
+          - name: request-logging
+            config:
+              log_body: false
+              log_args: true
+              log_headers: true
+              log_response_body: false
+      - name: easypay-root
+        paths:
+          - /
+        methods:
+          - GET
+        strip_path: false
+        plugins:
+          - name: cors
+            config:
+              origins:
+                - "*"
+              methods:
+                - GET
+              headers:
+                - Accept
+                - Content-Type
+              credentials: false
+              max_age: 3600
+          - name: request-logging
+            config:
+              log_body: false
+              log_args: true
+              log_headers: true
+              log_response_body: false
+
+# Global plugins for all services
+plugins:
+  - name: prometheus
+    config:
+      per_consumer: true
+      status_code_metrics: true
+      latency_metrics: true
+      bandwidth_metrics: true
+      upstream_health_metrics: true
+  - name: request-logging
+    config:
+      log_body: true
+      log_args: true
+      log_headers: true
+      log_response_body: true
+  - name: correlation-id
+    config:
+      header_name: X-Correlation-ID
+      echo_downstream: true
+      generator: uuid#counter
+
+# Consumers for API key authentication (to be implemented later)
+consumers: []
+
+# Upstreams for load balancing (if needed in future)
+upstreams: []

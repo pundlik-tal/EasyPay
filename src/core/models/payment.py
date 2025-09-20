@@ -14,7 +14,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
-from src.infrastructure.database.base import Base
+from src.infrastructure.db_components.base import Base
 
 
 class PaymentStatus(str, Enum):
