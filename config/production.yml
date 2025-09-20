@@ -1,0 +1,160 @@
+# EasyPay Payment Gateway - Production Configuration
+# This file contains production-specific configuration settings
+
+# Application Configuration
+app:
+  name: "EasyPay Payment Gateway"
+  version: "1.0.0"
+  environment: "production"
+  debug: false
+  host: "0.0.0.0"
+  port: 8000
+  workers: 4
+  reload: false
+
+# Database Configuration
+database:
+  url: "${DATABASE_URL}"
+  pool_size: 20
+  max_overflow: 30
+  pool_timeout: 30
+  pool_recycle: 3600
+  echo: false
+  connect_args:
+    connect_timeout: 10
+    command_timeout: 30
+
+# Redis Configuration
+redis:
+  url: "${REDIS_URL}"
+  pool_size: 20
+  max_connections: 100
+  retry_on_timeout: true
+  socket_timeout: 5
+  socket_connect_timeout: 5
+
+# Security Configuration
+security:
+  secret_key: "${SECRET_KEY}"
+  jwt:
+    secret_key: "${JWT_SECRET_KEY}"
+    algorithm: "HS256"
+    access_token_expire_minutes: 15
+    refresh_token_expire_days: 7
+  cors:
+    origins: ["https://yourdomain.com", "https://api.yourdomain.com"]
+    allow_credentials: true
+    allow_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    allow_headers: ["*"]
+  headers:
+    enabled: true
+    hsts_max_age: 31536000
+    csp_enabled: true
+    x_frame_options: "DENY"
+    x_content_type_options: "nosniff"
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "json"
+  file: "/app/logs/easypay.log"
+  max_size: "100MB"
+  backup_count: 10
+  handlers:
+    - console
+    - file
+    - elasticsearch
+
+# Monitoring Configuration
+monitoring:
+  prometheus:
+    enabled: true
+    port: 9090
+  metrics:
+    enabled: true
+    collect_system_metrics: true
+    collect_business_metrics: true
+  health_check:
+    interval: 30
+    timeout: 10
+    retries: 3
+
+# Rate Limiting Configuration
+rate_limiting:
+  enabled: true
+  requests: 1000
+  window: 60
+  burst: 200
+  storage: "redis"
+
+# Payment Configuration
+payment:
+  timeout: 30
+  retry_attempts: 3
+  retry_delay: 5
+  max_amount: 100000.00
+  min_amount: 0.01
+  currency: "USD"
+
+# Webhook Configuration
+webhook:
+  timeout: 30
+  retry_attempts: 5
+  retry_delay: 5
+  max_retries: 10
+  signature_verification: true
+
+# Authorize.net Configuration
+authorize_net:
+  api_login_id: "${AUTHORIZE_NET_API_LOGIN_ID}"
+  transaction_key: "${AUTHORIZE_NET_TRANSACTION_KEY}"
+  sandbox: false
+  webhook_secret: "${AUTHORIZE_NET_WEBHOOK_SECRET}"
+  timeout: 30
+  retry_attempts: 3
+
+# Cache Configuration
+cache:
+  ttl: 3600
+  max_size: 1000
+  strategy: "write-through"
+  compression: true
+
+# Circuit Breaker Configuration
+circuit_breaker:
+  enabled: true
+  failure_threshold: 5
+  recovery_timeout: 60
+  expected_exception: "Exception"
+
+# Backup Configuration
+backup:
+  enabled: true
+  schedule: "0 2 * * *"
+  retention_days: 30
+  s3:
+    bucket: "${BACKUP_S3_BUCKET}"
+    access_key: "${BACKUP_S3_ACCESS_KEY}"
+    secret_key: "${BACKUP_S3_SECRET_KEY}"
+
+# SSL/TLS Configuration
+ssl:
+  enabled: true
+  cert_path: "/ssl/cert.pem"
+  key_path: "/ssl/key.pem"
+  verify_client: false
+
+# Performance Configuration
+performance:
+  connection_pool_size: 20
+  max_concurrent_requests: 100
+  request_timeout: 30
+  response_compression: true
+  static_file_caching: true
+
+# Migration Configuration
+migration:
+  enabled: true
+  auto_run: false
+  backup_before_run: true
+  rollback_on_failure: true

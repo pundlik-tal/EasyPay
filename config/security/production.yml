@@ -1,0 +1,257 @@
+# EasyPay Payment Gateway - Production Security Configuration
+security:
+  # SSL/TLS Configuration
+  ssl:
+    enabled: true
+    cert_path: "/ssl/cert.pem"
+    key_path: "/ssl/key.pem"
+    ca_cert_path: "/ssl/ca.pem"
+    verify_client: false
+    min_version: "TLSv1.2"
+    cipher_suites:
+      - "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+      - "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305"
+      - "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+    hsts:
+      enabled: true
+      max_age: 31536000
+      include_subdomains: true
+      preload: true
+
+  # Authentication & Authorization
+  auth:
+    jwt:
+      secret_key: "${JWT_SECRET_KEY}"
+      algorithm: "HS256"
+      access_token_expire_minutes: 15
+      refresh_token_expire_days: 7
+      issuer: "easypay-api"
+      audience: "easypay-clients"
+    
+    api_keys:
+      enabled: true
+      rotation_period_days: 90
+      max_keys_per_user: 5
+      key_length: 32
+    
+    password_policy:
+      min_length: 12
+      require_uppercase: true
+      require_lowercase: true
+      require_numbers: true
+      require_special_chars: true
+      max_age_days: 90
+      history_count: 5
+
+  # CORS Configuration
+  cors:
+    enabled: true
+    origins:
+      - "https://yourdomain.com"
+      - "https://api.yourdomain.com"
+      - "https://dashboard.yourdomain.com"
+    allow_credentials: true
+    allow_methods:
+      - "GET"
+      - "POST"
+      - "PUT"
+      - "DELETE"
+      - "OPTIONS"
+    allow_headers:
+      - "Authorization"
+      - "Content-Type"
+      - "X-Requested-With"
+      - "X-Correlation-ID"
+    expose_headers:
+      - "X-Correlation-ID"
+      - "X-Request-ID"
+    max_age: 86400
+
+  # Security Headers
+  headers:
+    enabled: true
+    content_security_policy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self' https:; frame-ancestors 'none';"
+    x_frame_options: "DENY"
+    x_content_type_options: "nosniff"
+    x_xss_protection: "1; mode=block"
+    referrer_policy: "strict-origin-when-cross-origin"
+    permissions_policy: "geolocation=(), microphone=(), camera=()"
+
+  # Rate Limiting
+  rate_limiting:
+    enabled: true
+    default_limit: 1000
+    default_window: 60
+    burst_limit: 200
+    storage: "redis"
+    key_prefix: "rate_limit:"
+    
+    # Endpoint-specific limits
+    endpoints:
+      "/api/v1/payments":
+        limit: 100
+        window: 60
+        burst: 20
+      "/api/v1/auth/login":
+        limit: 10
+        window: 60
+        burst: 5
+      "/api/v1/webhooks":
+        limit: 500
+        window: 60
+        burst: 100
+
+  # Input Validation
+  validation:
+    enabled: true
+    max_request_size: "10MB"
+    max_file_size: "5MB"
+    allowed_file_types:
+      - "image/jpeg"
+      - "image/png"
+      - "image/gif"
+      - "application/pdf"
+    
+    # SQL Injection Prevention
+    sql_injection_protection: true
+    
+    # XSS Prevention
+    xss_protection: true
+    
+    # CSRF Protection
+    csrf_protection: true
+    csrf_token_header: "X-CSRF-Token"
+
+  # Encryption
+  encryption:
+    enabled: true
+    algorithm: "AES-256-GCM"
+    key_rotation_days: 30
+    
+    # Sensitive data encryption
+    encrypt_fields:
+      - "card_number"
+      - "cvv"
+      - "bank_account"
+      - "ssn"
+      - "api_keys"
+
+  # Audit Logging
+  audit:
+    enabled: true
+    log_all_requests: true
+    log_sensitive_data: false
+    log_user_actions: true
+    log_admin_actions: true
+    log_security_events: true
+    
+    # Audit events to track
+    events:
+      - "authentication"
+      - "authorization"
+      - "payment_creation"
+      - "payment_modification"
+      - "payment_deletion"
+      - "webhook_delivery"
+      - "api_key_creation"
+      - "api_key_deletion"
+      - "user_creation"
+      - "user_deletion"
+      - "admin_actions"
+
+  # Session Management
+  session:
+    enabled: true
+    timeout_minutes: 30
+    max_sessions_per_user: 5
+    secure_cookies: true
+    http_only_cookies: true
+    same_site: "Strict"
+
+  # IP Whitelisting/Blacklisting
+  ip_filtering:
+    enabled: true
+    whitelist:
+      - "127.0.0.1"
+      - "::1"
+      # Add your production IPs here
+    blacklist:
+      # Add known malicious IPs here
+    block_suspicious_ips: true
+    suspicious_threshold: 10
+
+  # Webhook Security
+  webhook:
+    signature_verification: true
+    signature_algorithm: "HMAC-SHA256"
+    timestamp_tolerance: 300  # 5 minutes
+    replay_protection: true
+    max_replay_age: 3600  # 1 hour
+
+  # API Security
+  api:
+    versioning: true
+    deprecation_warnings: true
+    request_id_header: "X-Request-ID"
+    correlation_id_header: "X-Correlation-ID"
+    
+    # API Key Security
+    api_keys:
+      require_https: true
+      require_signature: true
+      signature_algorithm: "HMAC-SHA256"
+      timestamp_tolerance: 300
+
+  # Database Security
+  database:
+    ssl_required: true
+    connection_encryption: true
+    query_logging: false  # Disable in production for performance
+    sensitive_data_masking: true
+    
+    # Row Level Security
+    row_level_security: true
+    
+    # Database user permissions
+    users:
+      easypay:
+        permissions: ["SELECT", "INSERT", "UPDATE", "DELETE"]
+        restrictions: ["NO_CREATE_DB", "NO_CREATE_USER"]
+      readonly_user:
+        permissions: ["SELECT"]
+        restrictions: ["NO_CREATE_DB", "NO_CREATE_USER", "NO_MODIFY"]
+      backup_user:
+        permissions: ["SELECT"]
+        restrictions: ["NO_CREATE_DB", "NO_CREATE_USER", "NO_MODIFY"]
+
+  # Monitoring & Alerting
+  monitoring:
+    security_events: true
+    failed_login_tracking: true
+    suspicious_activity_detection: true
+    brute_force_protection: true
+    brute_force_threshold: 5
+    brute_force_window: 300  # 5 minutes
+    brute_force_lockout: 900  # 15 minutes
+
+  # Compliance
+  compliance:
+    pci_dss: true
+    gdpr: true
+    sox: true
+    
+    # Data retention policies
+    data_retention:
+      audit_logs: "7 years"
+      payment_data: "7 years"
+      user_data: "3 years"
+      webhook_logs: "1 year"
+      access_logs: "1 year"
+
+  # Backup Security
+  backup:
+    encryption: true
+    encryption_key_rotation: true
+    secure_transport: true
+    access_control: true
+    integrity_verification: true

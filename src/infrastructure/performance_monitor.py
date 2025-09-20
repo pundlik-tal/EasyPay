@@ -235,7 +235,7 @@ class PerformanceAlertManager:
         """Add alert handler function."""
         self.alert_handlers.append(handler)
     
-    def check_alerts(self, analyzer: PerformanceAnalyzer) -> List[PerformanceAlert]:
+    async def check_alerts(self, analyzer: PerformanceAnalyzer) -> List[PerformanceAlert]:
         """Check for performance alerts."""
         
         new_alerts = []

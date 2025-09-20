@@ -108,6 +108,21 @@ class PaymentRequest(BaseModel):
         return v
 
 
+class TransactionRequest(BaseModel):
+    """Transaction request model for Authorize.net API."""
+    create_transaction_request: Dict[str, Any] = Field(..., description="Transaction request data")
+    
+    @field_validator('create_transaction_request')
+    @classmethod
+    def validate_transaction_request(cls, v):
+        """Validate transaction request structure."""
+        if not isinstance(v, dict):
+            raise ValueError('Transaction request must be a dictionary')
+        if 'transactionRequest' not in v:
+            raise ValueError('Transaction request must contain transactionRequest')
+        return v
+
+
 class PaymentResponse(BaseModel):
     """Payment response model."""
     transaction_id: Optional[str] = None
@@ -129,3 +144,15 @@ class AuthorizeNetCredentials(BaseModel):
     transaction_key: str = Field(..., min_length=1, max_length=16)
     sandbox: bool = True
     api_url: Optional[str] = None
+
+
+__all__ = [
+    'TransactionType',
+    'TransactionStatus', 
+    'CreditCard',
+    'BillingAddress',
+    'PaymentRequest',
+    'TransactionRequest',
+    'PaymentResponse',
+    'AuthorizeNetCredentials'
+]

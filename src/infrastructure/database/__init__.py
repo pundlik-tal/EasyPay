@@ -8,7 +8,8 @@ This package contains all database-related infrastructure components including:
 - Error handling
 """
 
-from .transaction_manager import (
+# Import from db_components since that's where the actual modules are
+from ..db_components.transaction_manager import (
     TransactionManager,
     TransactionIsolationLevel,
     TransactionError,
@@ -17,7 +18,7 @@ from .transaction_manager import (
     close_transaction_manager
 )
 
-from .migration_manager import (
+from ..db_components.migration_manager import (
     MigrationManager,
     Migration,
     MigrationStatus,
@@ -25,25 +26,30 @@ from .migration_manager import (
     MigrationError
 )
 
-from .data_validator import (
+from ..db_components.data_validator import (
     DataValidator,
     ValidationLevel,
     ValidationRule
 )
 
-from .error_handler import (
+from ..db_components.error_handler import (
     DatabaseErrorHandler,
     DatabaseErrorInfo,
     ErrorSeverity,
     ErrorCategory
 )
 
-from .base import Base
+from ..db_components.base import Base
 
 # Database initialization functions are imported directly from database.py
-# to avoid circular imports
+# to avoid circular imports - these are available at the package level
 
 __all__ = [
+    # Database initialization
+    'init_database',
+    'get_db_session',
+    'close_database',
+    
     # Database base
     'Base',
     

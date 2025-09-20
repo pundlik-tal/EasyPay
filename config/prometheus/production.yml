@@ -1,0 +1,126 @@
+# EasyPay Payment Gateway - Production Prometheus Configuration
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'easypay-production'
+    environment: 'production'
+
+rule_files:
+  - "alerts.yml"
+  - "recording_rules.yml"
+
+scrape_configs:
+  # EasyPay API Service
+  - job_name: 'easypay-api'
+    static_configs:
+      - targets: ['easypay-api:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+    scrape_timeout: 5s
+    honor_labels: true
+    scheme: http
+
+  # Kong API Gateway
+  - job_name: 'kong'
+    static_configs:
+      - targets: ['kong:8001']
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+    scrape_timeout: 10s
+
+  # PostgreSQL Database
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # Redis Cache
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 30s
+    scrape_timeout: 10s
+
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 30s
+
+  # Node Exporter (System Metrics)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 30s
+
+  # cAdvisor (Container Metrics)
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+    scrape_interval: 30s
+
+  # Grafana
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # Elasticsearch
+  - job_name: 'elasticsearch'
+    static_configs:
+      - targets: ['elasticsearch:9200']
+    metrics_path: '/_prometheus/metrics'
+    scrape_interval: 30s
+
+  # Logstash
+  - job_name: 'logstash'
+    static_configs:
+      - targets: ['logstash:9600']
+    metrics_path: '/_node/stats/pipelines'
+    scrape_interval: 30s
+
+# Alerting Configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+# Storage Configuration
+storage:
+  tsdb:
+    retention.time: 30d
+    retention.size: 10GB
+    wal-compression: true
+
+# Remote Write Configuration (for long-term storage)
+remote_write:
+  - url: "https://prometheus-remote-write-endpoint/api/v1/write"
+    basic_auth:
+      username: "prometheus"
+      password: "${PROMETHEUS_REMOTE_WRITE_PASSWORD}"
+    queue_config:
+      max_samples_per_send: 1000
+      batch_send_deadline: 5s
+      max_retries: 10
+      min_backoff: 30ms
+      max_backoff: 100ms
+
+# Recording Rules
+recording_rules:
+  - name: "easypay_recording_rules"
+    rules:
+      - record: easypay:http_requests_per_second
+        expr: rate(http_requests_total[5m])
+      
+      - record: easypay:payment_success_rate
+        expr: rate(payment_requests_total{status="success"}[5m]) / rate(payment_requests_total[5m])
+      
+      - record: easypay:average_response_time
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))
+      
+      - record: easypay:error_rate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m])

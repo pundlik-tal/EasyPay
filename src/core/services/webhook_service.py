@@ -15,11 +15,11 @@ from src.core.exceptions import (
     ValidationError,
     DatabaseError,
     WebhookNotFoundError,
-    WebhookDeliveryError
+    WebhookError
 )
-from src.infrastructure.logging import get_logger
+import logging
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class WebhookService:
@@ -203,7 +203,7 @@ class WebhookService:
             
         Raises:
             WebhookNotFoundError: If webhook not found
-            WebhookDeliveryError: If delivery fails
+            WebhookError: If delivery fails
             DatabaseError: If database operation fails
         """
         try:
@@ -214,7 +214,7 @@ class WebhookService:
             
             # Check if webhook can be delivered
             if webhook.status not in [WebhookStatus.PENDING.value, WebhookStatus.RETRYING.value]:
-                raise WebhookDeliveryError(f"Webhook cannot be delivered in status: {webhook.status}")
+                raise WebhookError(f"Webhook cannot be delivered in status: {webhook.status}")
             
             # Prepare delivery data
             payload_json = json.dumps(webhook.payload, sort_keys=True)
@@ -257,9 +257,9 @@ class WebhookService:
             
         except Exception as e:
             logger.error(f"Failed to deliver webhook {webhook_id}: {str(e)}")
-            if isinstance(e, (WebhookNotFoundError, WebhookDeliveryError)):
+            if isinstance(e, (WebhookNotFoundError, WebhookError)):
                 raise
-            raise WebhookDeliveryError(f"Failed to deliver webhook: {str(e)}")
+            raise WebhookError(f"Failed to deliver webhook: {str(e)}")
     
     async def retry_failed_webhooks(self) -> Dict[str, Any]:
         """

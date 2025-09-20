@@ -52,3 +52,5 @@ authorizenet==1.1.6
 # Utilities
 python-dateutil==2.8.2
 pytz==2023.3
+psutil==5.9.6
+pythonjsonlogger==2.0.7
