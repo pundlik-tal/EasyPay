@@ -5,6 +5,10 @@ import asyncio
 import os
 import logging
 from typing import Optional
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from .client import AuthorizeNetClient
 from .models import CreditCard, BillingAddress, AuthorizeNetCredentials
@@ -29,8 +33,8 @@ async def test_authorize_net_integration():
         
         # Use test credentials for demonstration
         credentials = AuthorizeNetCredentials(
-            api_login_id="test_login_id",
-            transaction_key="test_transaction_key",
+            api_login_id="test_login",
+            transaction_key="test_key",
             sandbox=True
         )
     else:

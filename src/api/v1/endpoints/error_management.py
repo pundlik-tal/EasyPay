@@ -22,6 +22,7 @@ from src.infrastructure.dead_letter_queue import dead_letter_queue_service, Dead
 from src.infrastructure.circuit_breaker_service import circuit_breaker_service
 from src.infrastructure.error_reporting import ErrorReportingAPI, ErrorSeverity, AlertType
 from src.core.exceptions import EasyPayException
+from src.api.v1.middleware.auth import require_admin_read, require_admin_write
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +70,9 @@ class ShutdownStatus(BaseModel):
 
 # Error Recovery Endpoints
 @router.get("/recovery/status")
-async def get_recovery_status() -> Dict[str, Any]:
+async def get_recovery_status(
+    auth_context: dict = Depends(require_admin_read)
+) -> Dict[str, Any]:
     """Get error recovery system status."""
     try:
         return {
@@ -83,7 +86,10 @@ async def get_recovery_status() -> Dict[str, Any]:
 
 
 @router.post("/recovery/report-error")
-async def report_error(request: ErrorReportRequest) -> Dict[str, Any]:
+async def report_error(
+    request: ErrorReportRequest,
+    auth_context: dict = Depends(require_admin_write)
+) -> Dict[str, Any]:
     """Report an error to the error recovery system."""
     try:
         # Create a mock exception for reporting
@@ -117,7 +123,9 @@ async def report_error(request: ErrorReportRequest) -> Dict[str, Any]:
 
 # Dead Letter Queue Endpoints
 @router.get("/dead-letter-queue/status")
-async def get_dead_letter_queue_status() -> Dict[str, Any]:
+async def get_dead_letter_queue_status(
+    auth_context: dict = Depends(require_admin_read)
+) -> Dict[str, Any]:
     """Get dead letter queue status."""
     try:
         return await dlq_api.get_queue_status()
@@ -128,6 +136,7 @@ async def get_dead_letter_queue_status() -> Dict[str, Any]:
 
 @router.get("/dead-letter-queue/messages")
 async def get_dead_letter_messages(
+    auth_context: dict = Depends(require_admin_read),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of messages to return")
 ) -> List[Dict[str, Any]]:
     """Get dead letter queue messages."""
@@ -152,7 +161,10 @@ async def get_dead_letter_messages(
 
 
 @router.get("/dead-letter-queue/messages/{message_id}")
-async def get_dead_letter_message(message_id: str) -> Dict[str, Any]:
+async def get_dead_letter_message(
+    message_id: str,
+    auth_context: dict = Depends(require_admin_read)
+) -> Dict[str, Any]:
     """Get a specific dead letter queue message."""
     try:
         message = await dlq_api.get_message(message_id)
@@ -167,7 +179,10 @@ async def get_dead_letter_message(message_id: str) -> Dict[str, Any]:
 
 
 @router.post("/dead-letter-queue/messages/{message_id}/retry")
-async def retry_dead_letter_message(message_id: str) -> Dict[str, Any]:
+async def retry_dead_letter_message(
+    message_id: str,
+    auth_context: dict = Depends(require_admin_write)
+) -> Dict[str, Any]:
     """Retry a dead letter queue message."""
     try:
         return await dlq_api.retry_message(message_id)
@@ -177,7 +192,10 @@ async def retry_dead_letter_message(message_id: str) -> Dict[str, Any]:
 
 
 @router.delete("/dead-letter-queue/messages/{message_id}")
-async def delete_dead_letter_message(message_id: str) -> Dict[str, Any]:
+async def delete_dead_letter_message(
+    message_id: str,
+    auth_context: dict = Depends(require_admin_write)
+) -> Dict[str, Any]:
     """Delete a dead letter queue message."""
     try:
         return await dlq_api.delete_message(message_id)
@@ -187,7 +205,9 @@ async def delete_dead_letter_message(message_id: str) -> Dict[str, Any]:
 
 
 @router.post("/dead-letter-queue/cleanup")
-async def cleanup_dead_letter_queue() -> Dict[str, Any]:
+async def cleanup_dead_letter_queue(
+    auth_context: dict = Depends(require_admin_write)
+) -> Dict[str, Any]:
     """Clean up expired dead letter queue messages."""
     try:
         return await dlq_api.cleanup_expired()
@@ -198,7 +218,9 @@ async def cleanup_dead_letter_queue() -> Dict[str, Any]:
 
 # Circuit Breaker Endpoints
 @router.get("/circuit-breakers")
-async def get_circuit_breakers() -> List[CircuitBreakerStatus]:
+async def get_circuit_breakers(
+    auth_context: dict = Depends(require_admin_read)
+) -> List[CircuitBreakerStatus]:
     """Get all circuit breakers status."""
     try:
         metrics = circuit_breaker_service.get_all_metrics()
@@ -219,7 +241,10 @@ async def get_circuit_breakers() -> List[CircuitBreakerStatus]:
 
 
 @router.get("/circuit-breakers/{service_name}")
-async def get_circuit_breaker(service_name: str) -> CircuitBreakerStatus:
+async def get_circuit_breaker(
+    service_name: str,
+    auth_context: dict = Depends(require_admin_read)
+) -> CircuitBreakerStatus:
     """Get specific circuit breaker status."""
     try:
         circuit_breaker = circuit_breaker_service.get_circuit_breaker(service_name)
@@ -243,7 +268,10 @@ async def get_circuit_breaker(service_name: str) -> CircuitBreakerStatus:
 
 
 @router.post("/circuit-breakers/{service_name}/reset")
-async def reset_circuit_breaker(service_name: str) -> Dict[str, Any]:
+async def reset_circuit_breaker(
+    service_name: str,
+    auth_context: dict = Depends(require_admin_write)
+) -> Dict[str, Any]:
     """Reset a circuit breaker."""
     try:
         success = circuit_breaker_service.reset_circuit_breaker(service_name)
@@ -263,7 +291,9 @@ async def reset_circuit_breaker(service_name: str) -> Dict[str, Any]:
 
 
 @router.get("/circuit-breakers/healthy")
-async def get_healthy_services() -> Dict[str, Any]:
+async def get_healthy_services(
+    auth_context: dict = Depends(require_admin_read)
+) -> Dict[str, Any]:
     """Get list of healthy services."""
     try:
         healthy_services = circuit_breaker_service.get_healthy_services()
@@ -282,7 +312,9 @@ async def get_healthy_services() -> Dict[str, Any]:
 
 # Graceful Shutdown Endpoints
 @router.get("/shutdown/status")
-async def get_shutdown_status() -> ShutdownStatus:
+async def get_shutdown_status(
+    auth_context: dict = Depends(require_admin_read)
+) -> ShutdownStatus:
     """Get graceful shutdown status."""
     try:
         status_data = graceful_shutdown_manager.get_shutdown_status()
@@ -293,7 +325,9 @@ async def get_shutdown_status() -> ShutdownStatus:
 
 
 @router.post("/shutdown/initiate")
-async def initiate_shutdown() -> Dict[str, Any]:
+async def initiate_shutdown(
+    auth_context: dict = Depends(require_admin_write)
+) -> Dict[str, Any]:
     """Initiate graceful shutdown."""
     try:
         if graceful_shutdown_manager.is_shutting_down:
@@ -318,7 +352,9 @@ async def initiate_shutdown() -> Dict[str, Any]:
 
 # Error Reporting Endpoints
 @router.get("/errors/dashboard")
-async def get_error_dashboard() -> Dict[str, Any]:
+async def get_error_dashboard(
+    auth_context: dict = Depends(require_admin_read)
+) -> Dict[str, Any]:
     """Get error dashboard data."""
     try:
         return await error_api.get_error_dashboard()
@@ -329,6 +365,7 @@ async def get_error_dashboard() -> Dict[str, Any]:
 
 @router.get("/errors")
 async def get_error_reports(
+    auth_context: dict = Depends(require_admin_read),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of errors to return"),
     severity: Optional[ErrorSeverity] = Query(None, description="Filter by severity"),
     error_type: Optional[str] = Query(None, description="Filter by error type"),
@@ -348,7 +385,10 @@ async def get_error_reports(
 
 
 @router.get("/errors/{error_id}")
-async def get_error_details(error_id: str) -> Dict[str, Any]:
+async def get_error_details(
+    error_id: str,
+    auth_context: dict = Depends(require_admin_read)
+) -> Dict[str, Any]:
     """Get detailed error information."""
     try:
         error_details = await error_api.get_error_details(error_id)
@@ -363,7 +403,10 @@ async def get_error_details(error_id: str) -> Dict[str, Any]:
 
 
 @router.post("/errors/{error_id}/resolve")
-async def resolve_error(error_id: str) -> Dict[str, Any]:
+async def resolve_error(
+    error_id: str,
+    auth_context: dict = Depends(require_admin_write)
+) -> Dict[str, Any]:
     """Resolve an error."""
     try:
         return await error_api.resolve_error(error_id)
@@ -374,6 +417,7 @@ async def resolve_error(error_id: str) -> Dict[str, Any]:
 
 @router.get("/alerts")
 async def get_alerts(
+    auth_context: dict = Depends(require_admin_read),
     limit: int = Query(50, ge=1, le=1000, description="Maximum number of alerts to return"),
     alert_type: Optional[AlertType] = Query(None, description="Filter by alert type"),
     severity: Optional[ErrorSeverity] = Query(None, description="Filter by severity"),
@@ -393,7 +437,10 @@ async def get_alerts(
 
 
 @router.post("/alerts/{alert_id}/resolve")
-async def resolve_alert(alert_id: str) -> Dict[str, Any]:
+async def resolve_alert(
+    alert_id: str,
+    auth_context: dict = Depends(require_admin_write)
+) -> Dict[str, Any]:
     """Resolve an alert."""
     try:
         return await error_reporting_service.resolve_alert(alert_id)
@@ -403,7 +450,9 @@ async def resolve_alert(alert_id: str) -> Dict[str, Any]:
 
 
 @router.get("/errors/metrics")
-async def get_error_metrics() -> Dict[str, Any]:
+async def get_error_metrics(
+    auth_context: dict = Depends(require_admin_read)
+) -> Dict[str, Any]:
     """Get error metrics."""
     try:
         return error_reporting_service.get_error_metrics()
@@ -414,6 +463,7 @@ async def get_error_metrics() -> Dict[str, Any]:
 
 @router.get("/errors/trends")
 async def get_error_trends(
+    auth_context: dict = Depends(require_admin_read),
     hours: int = Query(24, ge=1, le=168, description="Number of hours to analyze")
 ) -> Dict[str, Any]:
     """Get error trends over time."""

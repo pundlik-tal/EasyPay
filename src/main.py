@@ -10,13 +10,13 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
-from prometheus_client import Counter, Histogram, generate_latest
+from prometheus_client import generate_latest
 from starlette.responses import Response
 
 from src.core.exceptions import EasyPayException
 from src.infrastructure.database import init_database
 from src.infrastructure.cache import init_cache
-from src.api.v1.endpoints import health, payments, admin, auth, version, webhooks, webhook_receiver
+from src.api.v1.endpoints import health, payments, admin, auth, version, webhooks, webhook_receiver, subscriptions
 from src.api.v1.endpoints.authorize_net_webhooks import router as authorize_net_webhooks_router
 from src.api.v1.endpoints.error_management import router as error_management_router
 from src.infrastructure.logging import setup_logging
@@ -26,10 +26,11 @@ from src.infrastructure.graceful_shutdown import graceful_shutdown_manager
 from src.infrastructure.dead_letter_queue import dead_letter_queue_service
 from src.infrastructure.circuit_breaker_service import circuit_breaker_service
 from src.infrastructure.error_reporting import error_reporting_service
+from src.infrastructure.metrics import get_request_count, get_request_duration
 
-# Prometheus metrics
-REQUEST_COUNT = Counter('http_requests_total', 'Total HTTP requests', ['method', 'endpoint', 'status'])
-REQUEST_DURATION = Histogram('http_request_duration_seconds', 'HTTP request duration', ['method', 'endpoint'])
+# Get Prometheus metrics
+REQUEST_COUNT = get_request_count()
+REQUEST_DURATION = get_request_duration()
 
 # Configure logging
 logger = setup_logging()
@@ -57,10 +58,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         logger.info("Dead letter queue workers started")
         
         # Register shutdown handlers
+        from src.infrastructure.graceful_shutdown import ShutdownPriority
         graceful_shutdown_manager.register_shutdown_handler(
             "dead_letter_queue",
             dead_letter_queue_service.stop_processing_workers,
-            priority="high",
+            priority=ShutdownPriority.HIGH,
             timeout=10
         )
         
@@ -273,6 +275,7 @@ app.add_middleware(GlobalErrorHandlerMiddleware)
 app.include_router(health.router, prefix="/health", tags=["health"])
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["authentication"])
 app.include_router(payments.router, prefix="/api/v1/payments", tags=["payments"])
+app.include_router(subscriptions.router, prefix="/api/v1/subscriptions", tags=["subscriptions"])
 app.include_router(webhooks.router, prefix="/api/v1", tags=["webhooks"])
 app.include_router(webhook_receiver.router, prefix="/api/v1", tags=["webhook-receiver"])
 app.include_router(authorize_net_webhooks_router, prefix="/api/v1", tags=["authorize-net-webhooks"])

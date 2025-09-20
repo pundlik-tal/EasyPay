@@ -11,12 +11,15 @@ import os
 
 from src.infrastructure.database import get_db_session
 from src.core.config import settings
+from src.api.v1.middleware.auth import require_admin_read, require_admin_write
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
 @router.get("/database", response_class=HTMLResponse)
-async def database_admin_interface():
+async def database_admin_interface(
+    auth_context: dict = Depends(require_admin_read)
+):
     """
     Serve the database admin web interface.
     """
@@ -26,7 +29,8 @@ async def database_admin_interface():
 
 @router.get("/database/tables")
 async def get_database_tables(
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session),
+    auth_context: dict = Depends(require_admin_read)
 ) -> Dict[str, Any]:
     """
     Get list of all database tables and their basic info.
@@ -78,7 +82,8 @@ async def get_database_tables(
 async def execute_query(
     query: str = Query(..., description="SQL query to execute"),
     limit: int = Query(100, description="Maximum number of rows to return"),
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session),
+    auth_context: dict = Depends(require_admin_write)
 ) -> Dict[str, Any]:
     """
     Execute a read-only SQL query and return results.
@@ -113,7 +118,8 @@ async def execute_query(
 
 @router.get("/database/stats")
 async def get_database_stats(
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session),
+    auth_context: dict = Depends(require_admin_read)
 ) -> Dict[str, Any]:
     """
     Get database statistics and table row counts.
@@ -171,7 +177,8 @@ async def get_database_stats(
 
 @router.get("/database/health")
 async def database_health_check(
-    db: AsyncSession = Depends(get_db_session)
+    db: AsyncSession = Depends(get_db_session),
+    auth_context: dict = Depends(require_admin_read)
 ) -> Dict[str, Any]:
     """
     Check database health and connectivity.

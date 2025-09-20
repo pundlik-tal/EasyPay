@@ -5,6 +5,10 @@ EasyPay Payment Gateway - Authorize.net Integration Example
 import asyncio
 import os
 import sys
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -27,6 +31,10 @@ async def main():
     api_login_id = os.getenv("AUTHORIZE_NET_API_LOGIN_ID")
     transaction_key = os.getenv("AUTHORIZE_NET_TRANSACTION_KEY")
     
+    print(f"🔍 Environment check:")
+    print(f"   API Login ID: {'✅ Found' if api_login_id else '❌ Missing'}")
+    print(f"   Transaction Key: {'✅ Found' if transaction_key else '❌ Missing'}")
+    
     if not api_login_id or not transaction_key:
         print("⚠️  No Authorize.net credentials found in environment variables.")
         print("   Set AUTHORIZE_NET_API_LOGIN_ID and AUTHORIZE_NET_TRANSACTION_KEY")
@@ -34,8 +42,8 @@ async def main():
         
         # Use test credentials for demonstration
         credentials = AuthorizeNetCredentials(
-            api_login_id="demo_login_id",
-            transaction_key="demo_transaction_key",
+            api_login_id="demo_login",
+            transaction_key="demo_key",
             sandbox=True
         )
     else:

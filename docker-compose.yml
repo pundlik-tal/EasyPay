@@ -29,6 +29,7 @@ services:
   # EasyPay API Service (Internal)
   easypay-api:
     build: .
+    command: ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
     ports:
       - "8002:8000"  # Internal port for Kong to proxy to
     environment:

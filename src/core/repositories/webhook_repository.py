@@ -183,9 +183,9 @@ class WebhookRepository:
             # Apply filters
             conditions = []
             if event_type:
-                conditions.append(Webhook.event_type == event_type.value)
+                conditions.append(Webhook.event_type == event_type)
             if status:
-                conditions.append(Webhook.status == status.value)
+                conditions.append(Webhook.status == status)
             if payment_id:
                 conditions.append(Webhook.payment_id == payment_id)
             if start_date:
@@ -249,7 +249,7 @@ class WebhookRepository:
                 select(Webhook)
                 .where(
                     and_(
-                        Webhook.status.in_([WebhookStatus.FAILED.value, WebhookStatus.RETRYING.value]),
+                        Webhook.status.in_([WebhookStatus.FAILED, WebhookStatus.RETRYING]),
                         Webhook.retry_count < max_retries
                     )
                 )
@@ -272,7 +272,7 @@ class WebhookRepository:
                 select(Webhook)
                 .where(
                     and_(
-                        Webhook.status == WebhookStatus.RETRYING.value,
+                        Webhook.status == WebhookStatus.RETRYING,
                         Webhook.next_retry_at <= now
                     )
                 )
@@ -315,7 +315,7 @@ class WebhookRepository:
         try:
             result = await self.session.execute(
                 select(Webhook)
-                .where(Webhook.event_type == event_type.value)
+                .where(Webhook.event_type == event_type)
                 .order_by(Webhook.created_at.desc())
             )
             return list(result.scalars().all())
@@ -409,7 +409,7 @@ class WebhookRepository:
         """
         try:
             update_data = {
-                'status': WebhookStatus.DELIVERED.value,
+                'status': WebhookStatus.DELIVERED,
                 'response_status_code': response_status_code,
                 'response_body': response_body,
                 'response_headers': response_headers,
@@ -438,7 +438,7 @@ class WebhookRepository:
         """
         try:
             update_data = {
-                'status': WebhookStatus.FAILED.value,
+                'status': WebhookStatus.FAILED,
                 'failed_at': datetime.utcnow()
             }
             
@@ -472,7 +472,7 @@ class WebhookRepository:
                 return None
             
             update_data = {
-                'status': WebhookStatus.RETRYING.value,
+                'status': WebhookStatus.RETRYING,
                 'retry_count': webhook.retry_count + 1,
                 'next_retry_at': datetime.utcnow() + timedelta(minutes=retry_delay_minutes)
             }

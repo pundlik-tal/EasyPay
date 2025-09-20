@@ -185,6 +185,12 @@ class ConnectionPoolManager:
                 yield session
             except Exception as e:
                 await session.rollback()
+                # Don't wrap business logic errors (ValidationError, PaymentError, etc.)
+                # Only wrap actual database/session errors
+                from src.core.exceptions import EasyPayException
+                # Don't wrap any EasyPay business logic exceptions
+                if isinstance(e, EasyPayException):
+                    raise
                 raise DatabaseError(f"Database session error: {str(e)}")
             finally:
                 await session.close()

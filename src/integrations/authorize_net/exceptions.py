@@ -16,12 +16,12 @@ class AuthorizeNetError(EasyPayException):
         error_code: str = "AUTHORIZE_NET_ERROR",
         details: Optional[Dict[str, Any]] = None
     ):
+        self.details = details or {}
         super().__init__(
             message=message,
             error_code=error_code,
             error_type="authorize_net_error",
-            status_code=500,
-            details=details or {}
+            status_code=500
         )
 
 
@@ -36,7 +36,7 @@ class AuthorizeNetAuthenticationError(AuthorizeNetError):
         super().__init__(
             message=message,
             error_code="AUTHORIZE_NET_AUTH_ERROR",
-            details=details or {}
+            details=details
         )
         self.status_code = 401
 

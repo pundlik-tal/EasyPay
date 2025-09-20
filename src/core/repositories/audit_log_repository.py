@@ -110,9 +110,9 @@ class AuditLogRepository:
             # Apply filters
             conditions = []
             if action:
-                conditions.append(AuditLog.action == action.value)
+                conditions.append(AuditLog.action == action)
             if level:
-                conditions.append(AuditLog.level == level.value)
+                conditions.append(AuditLog.level == level)
             if entity_type:
                 conditions.append(AuditLog.entity_type == entity_type)
             if entity_id:
@@ -242,7 +242,7 @@ class AuditLogRepository:
         try:
             result = await self.session.execute(
                 select(AuditLog)
-                .where(AuditLog.action == action.value)
+                .where(AuditLog.action == action)
                 .order_by(AuditLog.created_at.desc())
             )
             return list(result.scalars().all())
@@ -262,7 +262,7 @@ class AuditLogRepository:
         try:
             result = await self.session.execute(
                 select(AuditLog)
-                .where(AuditLog.level == level.value)
+                .where(AuditLog.level == level)
                 .order_by(AuditLog.created_at.desc())
             )
             return list(result.scalars().all())

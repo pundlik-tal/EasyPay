@@ -77,7 +77,7 @@ class AuthorizeNetClient:
             AuthorizeNetAuthenticationError: If authentication fails
         """
         try:
-            # Create a simple test request
+            # Create a simple test request using a card that works reliably
             test_request = {
                 "createTransactionRequest": {
                     "merchantAuthentication": {
@@ -87,10 +87,10 @@ class AuthorizeNetClient:
                     "refId": "test_auth",
                     "transactionRequest": {
                         "transactionType": "authOnlyTransaction",
-                        "amount": "0.01",
+                        "amount": "1.00",  # Use $1.00 instead of $0.01
                         "payment": {
                             "creditCard": {
-                                "cardNumber": "4111111111111111",
+                                "cardNumber": "4007000000027",  # Use declined test card - we just want to test auth
                                 "expirationDate": "1225",
                                 "cardCode": "123"
                             }
@@ -110,12 +110,30 @@ class AuthorizeNetClient:
             
             response = await self._make_request(test_request)
             
-            # Check if authentication was successful
-            if response.get("messages", {}).get("resultCode") == "Ok":
-                logger.info("Authorize.net authentication test successful")
-                return True
+            # Check if authentication was successful (API level)
+            messages = response.get("messages", {})
+            result_code = messages.get("resultCode")
+            
+            if result_code == "Ok":
+                # Authentication successful - check if transaction was processed
+                transaction_response = response.get("transactionResponse", {})
+                if transaction_response:
+                    trans_response_code = transaction_response.get("responseCode")
+                    # For authentication test, we just need to verify the API call worked
+                    # Transaction can be declined (code 2) - that's fine for auth test
+                    if trans_response_code in ["1", "2"]:  # Approved or Declined both indicate successful auth
+                        logger.info("Authorize.net authentication test successful")
+                        return True
+                    else:
+                        # Transaction error (code 3) might indicate auth issue
+                        error_msg = transaction_response.get("responseText", "Transaction error")
+                        raise AuthorizeNetAuthenticationError(f"Authentication test failed: {error_msg}")
+                else:
+                    logger.info("Authorize.net authentication test successful")
+                    return True
             else:
-                error_msg = response.get("messages", {}).get("message", [{}])[0].get("text", "Authentication failed")
+                # API level error - this indicates authentication failure
+                error_msg = messages.get("message", [{}])[0].get("text", "Authentication failed")
                 raise AuthorizeNetAuthenticationError(f"Authentication test failed: {error_msg}")
                 
         except AuthorizeNetError:

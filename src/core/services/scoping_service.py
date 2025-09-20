@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Optional, List, Dict, Any
 from uuid import UUID
 
-from sqlalchemy import select, update, delete, and_, Column, String, DateTime, Boolean, JSON, Index
+from sqlalchemy import select, update, delete, and_, Column, String, DateTime, Boolean, JSON, Index, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,7 +20,7 @@ from src.core.exceptions import (
 )
 from src.core.models.auth import APIKey
 from src.core.models.rbac import SecurityEvent
-from src.infrastructure.db_components.base import Base
+from src.core.models.api_key_scope import APIKeyScope, ScopeType
 
 
 class Environment(str, Enum):
@@ -29,56 +29,6 @@ class Environment(str, Enum):
     PRODUCTION = "production"
     DEVELOPMENT = "development"
     TESTING = "testing"
-
-
-class ScopeType(str, Enum):
-    """Scope type enumeration."""
-    ENVIRONMENT = "environment"
-    DOMAIN = "domain"
-    IP_RANGE = "ip_range"
-    TIME_WINDOW = "time_window"
-    RESOURCE_LIMIT = "resource_limit"
-    FEATURE_FLAG = "feature_flag"
-
-
-class APIKeyScope(Base):
-    """
-    API Key Scope model for environment-based access control.
-    
-    This model represents scoping rules for API keys,
-    allowing fine-grained control over where and how API keys can be used.
-    """
-    __tablename__ = "api_key_scopes"
-
-    # Primary key
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    
-    # Scope details
-    api_key_id = Column(UUID(as_uuid=True), ForeignKey("api_keys.id"), nullable=False)
-    scope_type = Column(String(50), nullable=False)
-    scope_value = Column(String(500), nullable=False)  # The actual scope value
-    scope_config = Column(JSON, nullable=True)  # Additional configuration
-    
-    # Status
-    is_active = Column(Boolean, nullable=False, default=True)
-    
-    # Timestamps
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Relationships
-    api_key = relationship("APIKey", back_populates="scopes")
-
-    # Indexes for performance
-    __table_args__ = (
-        Index('idx_api_key_scopes_api_key', 'api_key_id'),
-        Index('idx_api_key_scopes_type', 'scope_type'),
-        Index('idx_api_key_scopes_active', 'is_active'),
-        Index('idx_api_key_scopes_created', 'created_at'),
-    )
-
-    def __repr__(self) -> str:
-        return f"<APIKeyScope(id={self.id}, type={self.scope_type}, value={self.scope_value})>"
 
 
 class ScopingService:
@@ -118,7 +68,7 @@ class ScopingService:
         """
         try:
             # Validate scope type
-            if scope_type not in [scope.value for scope in ScopeType]:
+            if scope_type not in [scope for scope in ScopeType]:
                 raise ValidationError(f"Invalid scope type: {scope_type}")
             
             # Validate scope value based on type
@@ -147,7 +97,7 @@ class ScopingService:
     async def _validate_scope_value(self, scope_type: str, scope_value: str) -> None:
         """Validate scope value based on scope type."""
         if scope_type == ScopeType.ENVIRONMENT:
-            if scope_value not in [env.value for env in Environment]:
+            if scope_value not in [env for env in Environment]:
                 raise ValidationError(f"Invalid environment: {scope_value}")
         
         elif scope_type == ScopeType.DOMAIN:

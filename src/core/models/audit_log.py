@@ -68,7 +68,7 @@ class AuditLog(Base):
     
     # User/API information
     user_id = Column(String(255), nullable=True, index=True)
-    api_key_id = Column(String(255), nullable=True, index=True)
+    api_key_id = Column(UUID(as_uuid=True), ForeignKey("api_keys.id"), nullable=True, index=True)
     ip_address = Column(String(45), nullable=True)  # IPv6 support
     user_agent = Column(Text, nullable=True)
     
@@ -87,8 +87,9 @@ class AuditLog(Base):
     # Flags
     is_test = Column(Boolean, nullable=False, default=False)
     
-    # Relationships
+    # Relationships - temporarily disabled
     payment = relationship("Payment", back_populates="audit_logs")
+    # api_key = relationship("APIKey", back_populates="audit_logs")
 
     # Indexes for performance
     __table_args__ = (

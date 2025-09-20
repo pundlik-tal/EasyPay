@@ -387,8 +387,8 @@ class AdvancedPaymentFeatures:
         )
         
         # Retry managers for different operations
-        self.payment_retry = RetryManager(RetryPolicies.STANDARD)
-        self.external_api_retry = RetryManager(RetryPolicies.FAST)
+        self.payment_retry = RetryManager(RetryPolicy.STANDARD)
+        self.external_api_retry = RetryManager(RetryPolicy.FAST)
     
     def with_idempotency(self, operation: str):
         """Decorator for idempotent operations."""

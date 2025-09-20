@@ -38,7 +38,7 @@ from src.api.v1.schemas.payment import (
 )
 from src.core.services.advanced_payment_features import (
     AdvancedPaymentFeatures,
-    RetryPolicies
+    RetryPolicy
 )
 
 logger = logging.getLogger(__name__)
@@ -134,7 +134,7 @@ class PaymentService:
                 await self.advanced_features.track_payment_status_change(
                     str(payment.id), 
                     "none", 
-                    PaymentStatus.PENDING.value,
+                    PaymentStatus.PENDING,
                     "Payment created"
                 )
                 
@@ -348,7 +348,7 @@ class PaymentService:
             if self.advanced_features:
                 await self.advanced_features.track_payment_status_change(
                     str(payment_id),
-                    payment.status.value,
+                    payment.status,
                     "processing_refund",
                     f"Refund initiated for amount {refund_amount}"
                 )
@@ -392,7 +392,7 @@ class PaymentService:
                 await self.advanced_features.track_payment_status_change(
                     str(payment_id),
                     "processing_refund",
-                    new_status.value,
+                    new_status,
                     f"Refund completed for amount {refund_amount}"
                 )
                 
@@ -481,7 +481,7 @@ class PaymentService:
             if self.advanced_features:
                 await self.advanced_features.track_payment_status_change(
                     str(payment_id),
-                    payment.status.value,
+                    payment.status,
                     "processing_cancellation",
                     f"Cancellation initiated: {cancel_data.reason or 'No reason provided'}"
                 )
@@ -521,7 +521,7 @@ class PaymentService:
                 await self.advanced_features.track_payment_status_change(
                     str(payment_id),
                     "processing_cancellation",
-                    PaymentStatus.VOIDED.value,
+                    PaymentStatus.VOIDED,
                     f"Cancellation completed: {cancel_data.reason or 'No reason provided'}"
                 )
                 
@@ -714,7 +714,7 @@ class PaymentService:
             raise ValidationError("Currency must be a 3-character code")
         
         # Validate payment method
-        if payment_data.payment_method not in [method.value for method in PaymentMethod]:
+        if payment_data.payment_method not in [method for method in PaymentMethod]:
             raise ValidationError(f"Invalid payment method: {payment_data.payment_method}")
         
         # Validate customer email format if provided
@@ -751,7 +751,41 @@ class PaymentService:
         """
         # Check if payment can be refunded
         if not payment.is_refundable:
-            raise ValidationError(f"Payment cannot be refunded. Current status: {payment.status}")
+            if payment.status == PaymentStatus.VOIDED:
+                raise ValidationError(
+                    "Payment cannot be refunded because it has been voided. "
+                    "Voided payments were never charged and therefore cannot be refunded. "
+                    "Only captured or settled payments can be refunded."
+                )
+            elif payment.status == PaymentStatus.FAILED:
+                raise ValidationError(
+                    "Payment cannot be refunded because it failed. "
+                    "Failed payments were never charged and therefore cannot be refunded. "
+                    "Only captured or settled payments can be refunded."
+                )
+            elif payment.status == PaymentStatus.DECLINED:
+                raise ValidationError(
+                    "Payment cannot be refunded because it was declined. "
+                    "Declined payments were never charged and therefore cannot be refunded. "
+                    "Only captured or settled payments can be refunded."
+                )
+            elif payment.status == PaymentStatus.PENDING:
+                raise ValidationError(
+                    "Payment cannot be refunded because it is still pending. "
+                    "Pending payments must be captured first before they can be refunded. "
+                    "Only captured or settled payments can be refunded."
+                )
+            elif payment.status == PaymentStatus.AUTHORIZED:
+                raise ValidationError(
+                    "Payment cannot be refunded because it is only authorized (not captured). "
+                    "Authorized payments must be captured first before they can be refunded. "
+                    "Only captured or settled payments can be refunded."
+                )
+            else:
+                raise ValidationError(
+                    f"Payment cannot be refunded. Current status: {payment.status}. "
+                    "Only captured or settled payments can be refunded."
+                )
         
         # Check refund amount
         if refund_data.amount:

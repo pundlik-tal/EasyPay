@@ -90,8 +90,9 @@ class Role(Base):
     
     # Relationships
     permissions = relationship("Permission", secondary=role_permissions, back_populates="roles")
-    api_keys = relationship("APIKey", back_populates="role")
-    users = relationship("User", secondary=user_roles, back_populates="roles")
+    # Temporarily comment out api_keys relationship to isolate the issue
+    # api_keys = relationship("src.core.models.auth.APIKey", back_populates="role")
+    users = relationship("src.core.models.auth.User", secondary=user_roles, back_populates="roles")
 
     # Indexes for performance
     __table_args__ = (
@@ -224,8 +225,8 @@ class ResourceAccess(Base):
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships
-    api_key = relationship("APIKey", back_populates="resource_access")
+    # Relationships - temporarily disabled
+    # api_key = relationship("src.core.models.auth.APIKey", back_populates="resource_access")
     role = relationship("Role")
 
     # Indexes for performance
@@ -323,8 +324,8 @@ class SecurityEvent(Base):
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
     # Relationships
-    api_key = relationship("APIKey", back_populates="security_events")
-    user = relationship("User", back_populates="security_events")
+    # api_key = relationship("src.core.models.auth.APIKey", back_populates="security_events")  # Temporarily disabled
+    user = relationship("src.core.models.auth.User", back_populates="security_events")
 
     # Indexes for performance
     __table_args__ = (

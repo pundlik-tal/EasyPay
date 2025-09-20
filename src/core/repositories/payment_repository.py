@@ -204,7 +204,7 @@ class PaymentRepository:
             if customer_id:
                 conditions.append(Payment.customer_id == customer_id)
             if status:
-                conditions.append(Payment.status == status.value)
+                conditions.append(Payment.status == status)
             if start_date:
                 conditions.append(Payment.created_at >= start_date)
             if end_date:
@@ -413,7 +413,7 @@ class PaymentRepository:
         try:
             result = await self.session.execute(
                 select(Payment)
-                .where(Payment.status == status.value)
+                .where(Payment.status == status)
                 .order_by(Payment.created_at.desc())
             )
             return list(result.scalars().all())

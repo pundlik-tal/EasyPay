@@ -661,11 +661,13 @@ class DataValidator:
         """Validate webhook event type."""
         if not isinstance(value, str):
             return False
-        try:
-            WebhookEventType(value)
-            return True
-        except ValueError:
-            return False
+        valid_event_types = [
+            "payment.authorized", "payment.captured", "payment.settled",
+            "payment.refunded", "payment.voided", "payment.failed", 
+            "payment.declined", "fraud.detected", "chargeback.created", 
+            "dispute.created"
+        ]
+        return value in valid_event_types
     
     def _validate_event_id(self, value: Any) -> bool:
         """Validate event ID."""
@@ -677,11 +679,8 @@ class DataValidator:
         """Validate webhook status."""
         if not isinstance(value, str):
             return False
-        try:
-            WebhookStatus(value)
-            return True
-        except ValueError:
-            return False
+        valid_statuses = ["pending", "delivered", "failed", "retrying", "expired"]
+        return value in valid_statuses
     
     def _validate_webhook_url(self, value: Any) -> bool:
         """Validate webhook URL."""
@@ -714,21 +713,21 @@ class DataValidator:
         """Validate audit action."""
         if not isinstance(value, str):
             return False
-        try:
-            AuditLogAction(value)
-            return True
-        except ValueError:
-            return False
+        valid_actions = [
+            "payment.created", "payment.updated", "payment.refunded", 
+            "payment.voided", "payment.captured", "webhook.received",
+            "webhook.delivered", "webhook.failed", "api_key.created",
+            "api_key.revoked", "user.login", "user.logout", 
+            "system.error", "security.violation"
+        ]
+        return value in valid_actions
     
     def _validate_audit_level(self, value: Any) -> bool:
         """Validate audit level."""
         if not isinstance(value, str):
             return False
-        try:
-            AuditLogLevel(value)
-            return True
-        except ValueError:
-            return False
+        valid_levels = ["info", "warning", "error", "critical"]
+        return value in valid_levels
     
     def _validate_audit_message(self, value: Any) -> bool:
         """Validate audit message."""

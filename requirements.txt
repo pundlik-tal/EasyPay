@@ -1,56 +1,56 @@
-# EasyPay Payment Gateway - Core Dependencies
+# EasyPay Payment Gateway - Core Dependencies (Updated December 2024)
 
 # Web Framework
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
 
 # Database
-sqlalchemy==2.0.23
-alembic==1.12.1
-psycopg2-binary==2.9.9
-asyncpg==0.29.0
+sqlalchemy==2.0.36
+alembic==1.14.0
+psycopg2-binary==2.9.10
+asyncpg==0.30.0
 
 # Redis
-redis==5.0.1
+redis==5.2.0
 
 # Authentication & Security
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
-python-multipart==0.0.6
+python-multipart==0.0.12
 
 # HTTP Client
-httpx==0.25.2
-aiohttp==3.9.1
+httpx==0.28.1
+aiohttp==3.10.11
 
 # Data Validation
-pydantic==2.5.0
-pydantic-settings==2.1.0
+pydantic==2.10.3
+pydantic-settings==2.7.0
 
 # Environment Management
-python-dotenv==1.0.0
+python-dotenv==1.0.1
 
 # Logging
-structlog==23.2.0
+structlog==24.4.0
 
 # Monitoring
-prometheus-client==0.19.0
+prometheus-client==0.21.1
 
 # Testing
-pytest==7.4.3
-pytest-asyncio==0.21.1
-pytest-cov==4.1.0
+pytest==8.3.4
+pytest-asyncio==0.24.0
+pytest-cov==6.0.0
 
 # Development Tools
-black==23.11.0
-isort==5.12.0
-flake8==6.1.0
-mypy==1.7.1
+black==24.10.0
+isort==5.13.2
+flake8==7.1.1
+mypy==1.13.0
 
 # Payment Processing
 authorizenet==1.1.6
 
 # Utilities
-python-dateutil==2.8.2
-pytz==2023.3
-psutil==5.9.6
-pythonjsonlogger==2.0.7
+python-dateutil==2.9.0
+pytz==2024.2
+psutil==6.1.0
+python-json-logger==3.2.0

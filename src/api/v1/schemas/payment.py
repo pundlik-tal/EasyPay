@@ -6,7 +6,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Optional, Dict, Any, List
 
-from pydantic import BaseModel, Field, validator, ConfigDict
+from pydantic import BaseModel, Field, validator, ConfigDict, field_validator
 
 
 class PaymentCreateRequest(BaseModel):
@@ -166,6 +166,8 @@ class PaymentCancelRequest(BaseModel):
 class PaymentResponse(BaseModel):
     """Response schema for payment data."""
     model_config = ConfigDict(
+        from_attributes=True,
+        populate_by_name=True,
         json_schema_extra={
             "examples": [
                 {
@@ -281,7 +283,7 @@ class PaymentResponse(BaseModel):
     card_last_four: Optional[str] = None
     card_brand: Optional[str] = None
     description: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    payment_metadata: Optional[Dict[str, Any]] = None
     processor_response_code: Optional[str] = None
     processor_response_message: Optional[str] = None
     processor_transaction_id: Optional[str] = None

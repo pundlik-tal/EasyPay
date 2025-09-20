@@ -84,13 +84,14 @@ class APIKey(Base):
     
     # RBAC integration
     role_id = Column(UUID(as_uuid=True), ForeignKey("roles.id"), nullable=True)
-    role = relationship("Role", back_populates="api_keys")
+    # Temporarily comment out role relationship to isolate the issue
+    # role = relationship("src.core.models.rbac.Role", back_populates="api_keys")
     
-    # Relationships
-    tokens = relationship("AuthToken", back_populates="api_key")
-    audit_logs = relationship("AuditLog", back_populates="api_key")
-    resource_access = relationship("ResourceAccess", back_populates="api_key")
-    security_events = relationship("SecurityEvent", back_populates="api_key")
+    # Relationships - temporarily disabled to fix database initialization
+    # tokens = relationship("AuthToken", back_populates="api_key")
+    # audit_logs = relationship("AuditLog", back_populates="api_key")
+    # resource_access = relationship("ResourceAccess", back_populates="api_key")
+    # security_events = relationship("SecurityEvent", back_populates="api_key")
     scopes = relationship("APIKeyScope", back_populates="api_key")
 
     # Indexes for performance
@@ -148,9 +149,9 @@ class AuthToken(Base):
     token_type = Column(String(50), nullable=False)
     jti = Column(String(255), unique=True, nullable=False, index=True)  # JWT ID
     
-    # Relationships
+    # Relationships - temporarily disabled
     api_key_id = Column(UUID(as_uuid=True), ForeignKey("api_keys.id"), nullable=False)
-    api_key = relationship("APIKey", back_populates="tokens")
+    # api_key = relationship("APIKey", back_populates="tokens")
     
     # Token payload (for validation)
     subject = Column(String(255), nullable=False)  # Usually the API key ID
@@ -242,8 +243,8 @@ class User(Base):
     verified_at = Column(DateTime, nullable=True)
     
     # Relationships
-    roles = relationship("Role", secondary="user_roles", back_populates="users")
-    security_events = relationship("SecurityEvent", back_populates="user")
+    roles = relationship("src.core.models.rbac.Role", secondary="user_roles", back_populates="users")
+    security_events = relationship("src.core.models.rbac.SecurityEvent", back_populates="user")
 
     # Indexes for performance
     __table_args__ = (

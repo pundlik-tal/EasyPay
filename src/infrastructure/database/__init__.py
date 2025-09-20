@@ -41,14 +41,27 @@ from ..db_components.error_handler import (
 
 from ..db_components.base import Base
 
-# Database initialization functions are imported directly from database.py
-# to avoid circular imports - these are available at the package level
+# Import database initialization functions from the renamed module
+from ..database_config import (
+    init_database,
+    get_db_session,
+    close_database,
+    get_migration_manager,
+    get_data_validator,
+    get_error_handler
+)
+
+# Database initialization functions are available in the parent database.py module
+# Import them directly from there to avoid circular imports
 
 __all__ = [
     # Database initialization
     'init_database',
     'get_db_session',
     'close_database',
+    'get_migration_manager',
+    'get_data_validator',
+    'get_error_handler',
     
     # Database base
     'Base',

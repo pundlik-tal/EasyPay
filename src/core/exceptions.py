@@ -22,6 +22,10 @@ class EasyPayException(Exception):
         self.status_code = status_code
         self.timestamp = timestamp or datetime.utcnow()
         super().__init__(self.message)
+    
+    def __str__(self) -> str:
+        """Return only the message without status code."""
+        return self.message
 
 
 class ValidationError(EasyPayException):
@@ -170,6 +174,16 @@ class WebhookNotFoundError(NotFoundError):
     """Raised when a webhook is not found."""
     
     def __init__(self, message: str = "Webhook not found", error_code: str = "webhook_not_found"):
+        super().__init__(
+            message=message,
+            error_code=error_code
+        )
+
+
+class WebhookDeliveryError(WebhookError):
+    """Raised when webhook delivery fails."""
+    
+    def __init__(self, message: str = "Webhook delivery failed", error_code: str = "webhook_delivery_error"):
         super().__init__(
             message=message,
             error_code=error_code

@@ -175,35 +175,56 @@ class TestPaymentService:
     @pytest.mark.asyncio
     async def test_refund_payment_success(self, payment_service, sample_payment, sample_payment_refund_request):
         """Test successful payment refund."""
-        # Set payment status to COMPLETED to make it refundable
-        sample_payment.status = PaymentStatus.COMPLETED
+        # Get the payment object
+        payment = await sample_payment
+        
+        # Set payment status to CAPTURED to make it refundable
+        payment.status = PaymentStatus.CAPTURED
         await payment_service.session.commit()
         
         with patch.object(payment_service, 'advanced_features', None):
             refunded_payment = await payment_service.refund_payment(
-                sample_payment.id, 
+                payment.id, 
                 sample_payment_refund_request
             )
             
             assert refunded_payment is not None
-            assert refunded_payment.id == sample_payment.id
+            assert refunded_payment.id == payment.id
             assert refunded_payment.status in [PaymentStatus.REFUNDED, PaymentStatus.PARTIALLY_REFUNDED]
             assert refunded_payment.refunded_amount == sample_payment_refund_request.amount
     
     @pytest.mark.asyncio
     async def test_refund_payment_not_refundable(self, payment_service, sample_payment, sample_payment_refund_request):
         """Test refund of non-refundable payment."""
+        # Get the payment object
+        payment = await sample_payment
         # Keep payment status as PENDING (not refundable)
         
         with pytest.raises(ValidationError, match="Payment cannot be refunded"):
-            await payment_service.refund_payment(sample_payment.id, sample_payment_refund_request)
+            await payment_service.refund_payment(payment.id, sample_payment_refund_request)
+    
+    @pytest.mark.asyncio
+    async def test_refund_payment_voided(self, payment_service, sample_payment, sample_payment_refund_request):
+        """Test refund of voided payment with improved error message."""
+        # Get the payment object
+        payment = await sample_payment
+        
+        # Set payment status to VOIDED
+        payment.status = PaymentStatus.VOIDED
+        await payment_service.session.commit()
+        
+        with pytest.raises(ValidationError, match="Payment cannot be refunded because it has been voided"):
+            await payment_service.refund_payment(payment.id, sample_payment_refund_request)
     
     @pytest.mark.asyncio
     async def test_refund_payment_amount_exceeds_remaining(self, payment_service, sample_payment):
         """Test refund with amount exceeding remaining refundable amount."""
-        # Set payment status to COMPLETED and set refunded amount
-        sample_payment.status = PaymentStatus.COMPLETED
-        sample_payment.refunded_amount = Decimal("8.00")  # Already refunded $8
+        # Get the payment object
+        payment = await sample_payment
+        
+        # Set payment status to CAPTURED and set refunded amount
+        payment.status = PaymentStatus.CAPTURED
+        payment.refunded_amount = Decimal("8.00")  # Already refunded $8
         await payment_service.session.commit()
         
         refund_request = PaymentRefundRequest(
@@ -212,7 +233,7 @@ class TestPaymentService:
         )
         
         with pytest.raises(ValidationError, match="Refund amount.*exceeds remaining refundable amount"):
-            await payment_service.refund_payment(sample_payment.id, refund_request)
+            await payment_service.refund_payment(payment.id, refund_request)
     
     @pytest.mark.asyncio
     async def test_cancel_payment_success(self, payment_service, sample_payment, sample_payment_cancel_request):

@@ -36,7 +36,7 @@ def start_services():
     try:
         # Start services in background
         result = subprocess.run([
-            'docker-compose', 'up', '-d', 'postgres', 'redis', 'pgadmin'
+            'docker-compose', 'up', '-d', 'postgres', 'redis', 'pgadmin', 'kong'
         ], cwd=Path(__file__).parent.parent)
         
         if result.returncode == 0:
@@ -86,21 +86,28 @@ def print_connection_info():
     print("\n" + "=" * 60)
     print("📋 Connection Information")
     print("=" * 60)
-    print("Database Admin Interface: http://localhost:8000/api/v1/admin/database")
-    print("API Documentation: http://localhost:8000/docs")
-    print("pgAdmin (if started): http://localhost:5050")
-    print("Grafana Dashboard: http://localhost:3000")
+    print("🌐 Web Interfaces:")
+    print("  Database Admin Interface: http://localhost:8000/api/v1/admin/database")
+    print("  API Documentation: http://localhost:8000/docs")
+    print("  Kong Admin API: http://localhost:8001")
+    print("  pgAdmin: http://localhost:5050")
+    print("  Grafana Dashboard: http://localhost:3000")
+    print("  Kibana Logs: http://localhost:5601")
     print()
-    print("Database Connection Details:")
+    print("🗄️ Database Connection Details:")
     print("  Host: localhost")
     print("  Port: 5432")
     print("  Database: easypay")
     print("  Username: easypay")
     print("  Password: password")
     print()
-    print("pgAdmin Login:")
-    print("  Email: admin@easypay.com")
-    print("  Password: admin")
+    print("🔐 Login Credentials:")
+    print("  pgAdmin:")
+    print("    Email: admin@easypay.com")
+    print("    Password: admin")
+    print("  Grafana:")
+    print("    Username: admin")
+    print("    Password: admin")
     print("=" * 60)
 
 def main():

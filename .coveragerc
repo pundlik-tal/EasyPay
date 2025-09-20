@@ -1,0 +1,128 @@
+[run]
+# Coverage configuration for EasyPay Payment Gateway
+
+# Source code to analyze
+source = src
+
+# Files to omit from coverage
+omit = 
+    */tests/*
+    */test_*
+    */__pycache__/*
+    */migrations/*
+    */venv/*
+    */env/*
+    setup.py
+    conftest.py
+    */alembic/*
+    */scripts/*
+    */docs/*
+    */examples/*
+    */kong/*
+    */config/*
+    */docker/*
+    */htmlcov/*
+    */coverage.xml
+    */pytest.ini
+    */requirements.txt
+    */README.md
+    */Dockerfile*
+    */docker-compose*.yml
+    */alembic.ini
+    */run_*.py
+    */run_coverage_analysis.py
+
+# Branch coverage
+branch = True
+
+# Data file location
+data_file = .coverage
+
+[report]
+# Coverage report configuration
+
+# Minimum coverage percentage
+fail_under = 80
+
+# Precision for coverage percentages
+precision = 2
+
+# Show missing lines
+show_missing = True
+
+# Skip covered files
+skip_covered = False
+
+# Skip empty files
+skip_empty = False
+
+# Sort coverage report
+sort = Cover
+
+# Exclude lines from coverage
+exclude_lines =
+    # Have to re-enable the standard pragma
+    pragma: no cover
+    
+    # Don't complain about missing debug-only code:
+    def __repr__
+    if self\.debug
+    
+    # Don't complain if tests don't hit defensive assertion code:
+    raise AssertionError
+    raise NotImplementedError
+    
+    # Don't complain if non-runnable code isn't run:
+    if 0:
+    if __name__ == .__main__.:
+    
+    # Don't complain about abstract methods
+    @(abc\.)?abstractmethod
+    
+    # Don't complain about protocol classes
+    class .*\bProtocol\):
+    
+    # Don't complain about type checking imports
+    if TYPE_CHECKING:
+    
+    # Don't complain about development/debugging code
+    if settings\.DEBUG:
+    if os\.environ\.get\(.*DEBUG.*\):
+    
+    # Don't complain about exception handling that's hard to test
+    except.*:
+        pass
+    
+    # Don't complain about logging statements
+    logger\.(debug|info|warning|error|critical)
+    
+    # Don't complain about TODO comments
+    # TODO:
+    # FIXME:
+    # XXX:
+    
+    # Don't complain about test fixtures
+    @pytest\.fixture
+    def .*:
+        .*
+
+[html]
+# HTML coverage report configuration
+
+# Directory for HTML report
+directory = htmlcov
+
+# Title for HTML report
+title = EasyPay Payment Gateway Coverage Report
+
+# Show contexts
+show_contexts = True
+
+[xml]
+# XML coverage report configuration
+
+# Output file for XML report
+output = coverage.xml
+
+# Include source code in XML report
+include_source = True

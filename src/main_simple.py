@@ -9,14 +9,15 @@ from typing import AsyncGenerator
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from prometheus_client import Counter, Histogram, generate_latest
+from prometheus_client import generate_latest
 from starlette.responses import Response
 
 from src.core.exceptions import EasyPayException
+from src.infrastructure.metrics import get_request_count, get_request_duration
 
-# Prometheus metrics
-REQUEST_COUNT = Counter('http_requests_total', 'Total HTTP requests', ['method', 'endpoint', 'status'])
-REQUEST_DURATION = Histogram('http_request_duration_seconds', 'HTTP request duration', ['method', 'endpoint'])
+# Get Prometheus metrics
+REQUEST_COUNT = get_request_count()
+REQUEST_DURATION = get_request_duration()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

@@ -7,7 +7,6 @@ from typing import AsyncGenerator, Optional
 from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import QueuePool
 
 from .db_components.base import Base
 
@@ -24,7 +23,6 @@ ASYNC_DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg:/
 # Create async engine
 async_engine = create_async_engine(
     ASYNC_DATABASE_URL,
-    poolclass=QueuePool,
     pool_size=int(os.getenv("DATABASE_POOL_SIZE", "10")),
     max_overflow=int(os.getenv("DATABASE_MAX_OVERFLOW", "20")),
     pool_pre_ping=True,
@@ -61,6 +59,12 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
             yield session
         except Exception as e:
             await session.rollback()
+            # Don't wrap business logic errors (ValidationError, PaymentError, etc.)
+            # Only wrap actual database/session errors
+            from src.core.exceptions import EasyPayException
+            # Don't wrap any EasyPay business logic exceptions
+            if isinstance(e, EasyPayException):
+                raise
             raise DatabaseError(f"Database session error: {str(e)}")
         finally:
             await session.close()
@@ -68,15 +72,24 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
 
 async def init_database() -> None:
     """
-    Initialize database connection and create tables.
+    Initialize database connection and verify tables exist.
     
     Raises:
         DatabaseError: If database initialization fails
     """
     try:
-        # Test connection
+        # Import all models to ensure SQLAlchemy can find all relationships
+        from src.core.models import (
+            Payment, Webhook, AuditLog, APIKey, AuthToken, User,
+            Role, Permission,  # ResourceAccess temporarily disabled
+            APIKeyScope, SecurityEvent
+        )
+        
+        # Test connection (don't create tables - use migrations instead)
         async with async_engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+            # Just test the connection
+            from sqlalchemy import text
+            await conn.execute(text("SELECT 1"))
         
         # Initialize transaction manager
         init_transaction_manager(async_engine)

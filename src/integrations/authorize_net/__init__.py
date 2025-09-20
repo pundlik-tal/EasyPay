@@ -10,7 +10,8 @@ from .models import (
     PaymentRequest,
     PaymentResponse,
     TransactionType,
-    TransactionStatus
+    TransactionStatus,
+    AuthorizeNetCredentials
 )
 
 __all__ = [
@@ -23,5 +24,6 @@ __all__ = [
     "PaymentRequest",
     "PaymentResponse",
     "TransactionType",
-    "TransactionStatus"
+    "TransactionStatus",
+    "AuthorizeNetCredentials"
 ]
