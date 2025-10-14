@@ -1,0 +1,1342 @@
+openapi: 3.0.3
+info:
+  title: EasyPay Payment Gateway API
+  description: |
+    A modern, secure payment gateway system built with FastAPI that provides:
+    
+    ## Core Features
+    - **Payment Processing**: Charge credit cards, process refunds, and manage transactions
+    - **Authentication**: API key management with JWT tokens and role-based access control
+    - **Webhook Handling**: Process Authorize.net webhooks for real-time payment updates
+    - **Monitoring**: Health checks, metrics, and comprehensive logging
+    
+    ## Authentication
+    All API endpoints require authentication using either:
+    - **API Keys**: Direct API key authentication for server-to-server communication
+    - **JWT Tokens**: Token-based authentication for web applications
+    
+    ## Rate Limiting
+    - Default: 100 requests/minute, 1000/hour, 10000/day
+    - Configurable per API key
+    - IP-based whitelisting and blacklisting support
+    
+    ## Error Handling
+    All errors follow a consistent format with error codes, messages, and timestamps.
+  version: 1.0.0
+  contact:
+    name: EasyPay Support
+    email: support@easypay.com
+    url: https://docs.easypay.com
+  license:
+    name: MIT License
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: https://api.easypay.com
+    description: Production server
+  - url: https://api-sandbox.easypay.com
+    description: Sandbox server
+  - url: http://localhost:8000
+    description: Development server
+
+security:
+  - ApiKeyAuth: []
+  - BearerAuth: []
+
+paths:
+  # Health Check Endpoints
+  /health:
+    get:
+      tags: [health]
+      summary: Basic Health Check
+      description: Basic health check endpoint
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  timestamp:
+                    type: string
+                    format: date-time
+                  service:
+                    type: string
+                    example: EasyPay Payment Gateway
+                  version:
+                    type: string
+                    example: "0.1.0"
+
+  /health/ready:
+    get:
+      tags: [health]
+      summary: Readiness Check
+      description: Readiness check endpoint that verifies all dependencies
+      security: []
+      responses:
+        '200':
+          description: Service is ready
+        '503':
+          description: Service not ready
+
+  /health/live:
+    get:
+      tags: [health]
+      summary: Liveness Check
+      description: Liveness check endpoint for Kubernetes
+      security: []
+      responses:
+        '200':
+          description: Service is alive
+
+  /health/detailed:
+    get:
+      tags: [health]
+      summary: Detailed Health Check
+      description: Detailed health check with comprehensive system information
+      security: []
+      responses:
+        '200':
+          description: Detailed health information
+
+  # Authentication Endpoints
+  /api/v1/auth/api-keys:
+    post:
+      tags: [authentication]
+      summary: Create API Key
+      description: Create a new API key with specified permissions and rate limits
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  maxLength: 255
+                  example: Production API Key
+                description:
+                  type: string
+                  maxLength: 1000
+                  example: API key for production payment processing
+                permissions:
+                  type: array
+                  items:
+                    type: string
+                    enum: [payments:read, payments:write, payments:delete, webhooks:read, webhooks:write, admin:read, admin:write]
+                  example: [payments:read, payments:write]
+                expires_at:
+                  type: string
+                  format: date-time
+                rate_limit_per_minute:
+                  type: integer
+                  minimum: 1
+                  maximum: 10000
+                  default: 100
+                rate_limit_per_hour:
+                  type: integer
+                  minimum: 1
+                  maximum: 100000
+                  default: 1000
+                rate_limit_per_day:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000000
+                  default: 10000
+                ip_whitelist:
+                  type: array
+                  items:
+                    type: string
+                ip_blacklist:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          description: API key created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  key_id:
+                    type: string
+                  key_secret:
+                    type: string
+                  name:
+                    type: string
+                  description:
+                    type: string
+                  permissions:
+                    type: array
+                    items:
+                      type: string
+                  expires_at:
+                    type: string
+                    format: date-time
+                  created_at:
+                    type: string
+                    format: date-time
+
+    get:
+      tags: [authentication]
+      summary: List API Keys
+      description: List API keys with pagination and filtering
+      parameters:
+        - name: skip
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: API keys retrieved successfully
+
+  /api/v1/auth/api-keys/{api_key_id}:
+    get:
+      tags: [authentication]
+      summary: Get API Key
+      description: Get API key by ID
+      parameters:
+        - name: api_key_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: API key retrieved successfully
+        '404':
+          description: API key not found
+
+    put:
+      tags: [authentication]
+      summary: Update API Key
+      description: Update an API key
+      parameters:
+        - name: api_key_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                permissions:
+                  type: array
+                  items:
+                    type: string
+                status:
+                  type: string
+                expires_at:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: API key updated successfully
+        '404':
+          description: API key not found
+
+    delete:
+      tags: [authentication]
+      summary: Delete API Key
+      description: Delete an API key
+      parameters:
+        - name: api_key_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: API key deleted successfully
+        '404':
+          description: API key not found
+
+  /api/v1/auth/tokens:
+    post:
+      tags: [authentication]
+      summary: Generate JWT Tokens
+      description: Generate JWT access and refresh tokens using API key credentials
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [key_id, key_secret]
+              properties:
+                key_id:
+                  type: string
+                key_secret:
+                  type: string
+      responses:
+        '200':
+          description: Tokens generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  refresh_token:
+                    type: string
+                  token_type:
+                    type: string
+                    example: Bearer
+                  expires_in:
+                    type: integer
+                  expires_at:
+                    type: string
+                    format: date-time
+
+  /api/v1/auth/tokens/refresh:
+    post:
+      tags: [authentication]
+      summary: Refresh Token
+      description: Refresh access token using refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '200':
+          description: Token refreshed successfully
+
+  /api/v1/auth/tokens/validate:
+    post:
+      tags: [authentication]
+      summary: Validate Token
+      description: Validate JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+      responses:
+        '200':
+          description: Token validation result
+
+  # Payment Endpoints
+  /api/v1/payments:
+    post:
+      tags: [payments]
+      summary: Create Payment
+      description: Create a new payment with advanced features
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, currency, payment_method]
+              properties:
+                amount:
+                  type: number
+                  minimum: 0.01
+                  example: 25.99
+                currency:
+                  type: string
+                  maxLength: 3
+                  default: USD
+                  example: USD
+                payment_method:
+                  type: string
+                  example: credit_card
+                customer_id:
+                  type: string
+                  maxLength: 255
+                  example: cust_123456789
+                customer_email:
+                  type: string
+                  maxLength: 255
+                  example: john.doe@example.com
+                customer_name:
+                  type: string
+                  maxLength: 255
+                  example: John Doe
+                card_token:
+                  type: string
+                  maxLength: 255
+                  example: tok_visa_4242
+                description:
+                  type: string
+                  example: Premium subscription payment
+                metadata:
+                  type: object
+                  example:
+                    order_id: order_2024_001
+                    product: premium_plan
+                is_test:
+                  type: boolean
+                  default: false
+      responses:
+        '201':
+          description: Payment created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  external_id:
+                    type: string
+                  amount:
+                    type: number
+                  currency:
+                    type: string
+                  status:
+                    type: string
+                    enum: [pending, authorized, captured, settled, failed, cancelled, refunded]
+                  customer_id:
+                    type: string
+                  customer_email:
+                    type: string
+                  customer_name:
+                    type: string
+                  description:
+                    type: string
+                  metadata:
+                    type: object
+                  created_at:
+                    type: string
+                    format: date-time
+                  updated_at:
+                    type: string
+                    format: date-time
+                  is_test:
+                    type: boolean
+
+    get:
+      tags: [payments]
+      summary: List Payments
+      description: Retrieve a paginated list of payments with optional filtering
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: customer_id
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, authorized, captured, settled, failed, cancelled, refunded]
+      responses:
+        '200':
+          description: Payments retrieved successfully
+
+  /api/v1/payments/{payment_id}:
+    get:
+      tags: [payments]
+      summary: Get Payment
+      description: Retrieve a payment by its ID
+      parameters:
+        - name: payment_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Payment ID (UUID or external ID)
+      responses:
+        '200':
+          description: Payment retrieved successfully
+        '404':
+          description: Payment not found
+
+    put:
+      tags: [payments]
+      summary: Update Payment
+      description: Update a payment
+      parameters:
+        - name: payment_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                description:
+                  type: string
+                metadata:
+                  type: object
+      responses:
+        '200':
+          description: Payment updated successfully
+        '404':
+          description: Payment not found
+
+  /api/v1/payments/{payment_id}/refund:
+    post:
+      tags: [payments]
+      summary: Refund Payment
+      description: Refund a payment, either partially or in full
+      parameters:
+        - name: payment_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                  description: Amount to refund (optional, defaults to full amount)
+                reason:
+                  type: string
+                  description: Reason for refund
+                metadata:
+                  type: object
+      responses:
+        '200':
+          description: Payment refunded successfully
+        '404':
+          description: Payment not found
+
+  /api/v1/payments/{payment_id}/cancel:
+    post:
+      tags: [payments]
+      summary: Cancel Payment
+      description: Cancel a payment
+      parameters:
+        - name: payment_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                metadata:
+                  type: object
+      responses:
+        '200':
+          description: Payment cancelled successfully
+        '404':
+          description: Payment not found
+
+  /api/v1/payments/authorize:
+    post:
+      tags: [payments]
+      summary: Authorize Payment
+      description: Authorize a payment without capturing funds
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentCreateRequest'
+      responses:
+        '201':
+          description: Payment authorized successfully
+
+  /api/v1/payments/{payment_id}/capture:
+    post:
+      tags: [payments]
+      summary: Capture Payment
+      description: Capture previously authorized funds
+      parameters:
+        - name: payment_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: capture_amount
+          in: query
+          schema:
+            type: number
+            minimum: 0.01
+          description: Amount to capture (partial capture)
+      responses:
+        '200':
+          description: Payment captured successfully
+        '404':
+          description: Payment not found
+
+  /api/v1/payments/{payment_id}/void:
+    post:
+      tags: [payments]
+      summary: Void Payment
+      description: Void a payment (alternative to cancel)
+      parameters:
+        - name: payment_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Payment voided successfully
+        '404':
+          description: Payment not found
+
+  # Webhook Endpoints
+  /api/v1/webhooks:
+    post:
+      tags: [webhooks]
+      summary: Register Webhook Endpoint
+      description: Register a new webhook endpoint for receiving payment events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url, event_types]
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  example: https://example.com/webhooks/payments
+                event_types:
+                  type: array
+                  items:
+                    type: string
+                    enum: [payment.authorized, payment.captured, payment.settled, payment.refunded, payment.voided, payment.failed, payment.declined, fraud.detected, chargeback.created, dispute.created]
+                  example: [payment.authorized, payment.captured]
+                description:
+                  type: string
+                  example: Payment webhook endpoint
+                metadata:
+                  type: object
+                is_test:
+                  type: boolean
+                  default: false
+      responses:
+        '201':
+          description: Webhook endpoint registered successfully
+
+    get:
+      tags: [webhooks]
+      summary: List Webhooks
+      description: List webhooks with filtering and pagination
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: event_type
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: payment_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Webhooks retrieved successfully
+
+  /api/v1/webhooks/{webhook_id}:
+    get:
+      tags: [webhooks]
+      summary: Get Webhook
+      description: Get webhook details by ID
+      parameters:
+        - name: webhook_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Webhook retrieved successfully
+        '404':
+          description: Webhook not found
+
+  /api/v1/webhooks/{webhook_id}/retry:
+    post:
+      tags: [webhooks]
+      summary: Retry Webhook
+      description: Retry webhook delivery
+      parameters:
+        - name: webhook_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                retry_delay_minutes:
+                  type: integer
+                  default: 5
+                max_retries:
+                  type: integer
+                  default: 3
+      responses:
+        '200':
+          description: Webhook retry initiated successfully
+
+  # Webhook Receiver Endpoints
+  /api/v1/webhooks/payment:
+    post:
+      tags: [webhook-receiver]
+      summary: Receive Payment Webhook
+      description: Receive and process payment-related webhooks from external services
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [event_type, event_id]
+              properties:
+                event_type:
+                  type: string
+                  example: payment.authorized
+                event_id:
+                  type: string
+                  example: evt_123456789
+                payment_id:
+                  type: string
+                  example: pay_123456789
+                data:
+                  type: object
+                created_at:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: Payment webhook processed successfully
+
+  /api/v1/webhooks/fraud:
+    post:
+      tags: [webhook-receiver]
+      summary: Receive Fraud Webhook
+      description: Receive and process fraud detection webhooks
+      security: []
+      responses:
+        '200':
+          description: Fraud webhook processed successfully
+
+  /api/v1/webhooks/chargeback:
+    post:
+      tags: [webhook-receiver]
+      summary: Receive Chargeback Webhook
+      description: Receive and process chargeback-related webhooks
+      security: []
+      responses:
+        '200':
+          description: Chargeback webhook processed successfully
+
+  /api/v1/webhooks/test:
+    post:
+      tags: [webhook-receiver]
+      summary: Receive Test Webhook
+      description: Receive and process test webhooks for development and testing
+      security: []
+      responses:
+        '200':
+          description: Test webhook processed successfully
+
+  # Subscription Endpoints
+  /api/v1/subscriptions:
+    post:
+      tags: [subscriptions]
+      summary: Create Subscription
+      description: Create a new recurring subscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customer_id, customer_email, customer_name, amount, currency, interval, card_token]
+              properties:
+                customer_id:
+                  type: string
+                  maxLength: 255
+                customer_email:
+                  type: string
+                  maxLength: 255
+                customer_name:
+                  type: string
+                  maxLength: 255
+                amount:
+                  type: number
+                  minimum: 0.01
+                currency:
+                  type: string
+                  maxLength: 3
+                  default: USD
+                interval:
+                  type: string
+                  enum: [weekly, monthly, yearly]
+                interval_count:
+                  type: integer
+                  minimum: 1
+                  default: 1
+                start_date:
+                  type: string
+                  format: date-time
+                trial_period_days:
+                  type: integer
+                  minimum: 0
+                card_token:
+                  type: string
+                  maxLength: 255
+                description:
+                  type: string
+                metadata:
+                  type: object
+                is_test:
+                  type: boolean
+                  default: false
+      responses:
+        '201':
+          description: Subscription created successfully
+
+    get:
+      tags: [subscriptions]
+      summary: List Subscriptions
+      description: Retrieve a paginated list of subscriptions with optional filtering
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: customer_id
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, trialing, paused, cancelled, past_due, unpaid]
+      responses:
+        '200':
+          description: Subscriptions retrieved successfully
+
+  /api/v1/subscriptions/{subscription_id}:
+    get:
+      tags: [subscriptions]
+      summary: Get Subscription
+      description: Retrieve a subscription by its ID
+      parameters:
+        - name: subscription_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Subscription retrieved successfully
+        '404':
+          description: Subscription not found
+
+    put:
+      tags: [subscriptions]
+      summary: Update Subscription
+      description: Update a subscription's details
+      parameters:
+        - name: subscription_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                interval:
+                  type: string
+                interval_count:
+                  type: integer
+                description:
+                  type: string
+                metadata:
+                  type: object
+      responses:
+        '200':
+          description: Subscription updated successfully
+        '404':
+          description: Subscription not found
+
+    delete:
+      tags: [subscriptions]
+      summary: Cancel Subscription
+      description: Cancel a subscription
+      parameters:
+        - name: subscription_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Subscription cancelled successfully
+        '404':
+          description: Subscription not found
+
+  /api/v1/subscriptions/{subscription_id}/cancel:
+    post:
+      tags: [subscriptions]
+      summary: Cancel Subscription (POST)
+      description: Cancel a subscription using POST method
+      parameters:
+        - name: subscription_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Subscription cancelled successfully
+
+  /api/v1/subscriptions/{subscription_id}/pause:
+    post:
+      tags: [subscriptions]
+      summary: Pause Subscription
+      description: Pause a subscription temporarily
+      parameters:
+        - name: subscription_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Subscription paused successfully
+
+  /api/v1/subscriptions/{subscription_id}/resume:
+    post:
+      tags: [subscriptions]
+      summary: Resume Subscription
+      description: Resume a paused subscription
+      parameters:
+        - name: subscription_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Subscription resumed successfully
+
+  # Admin Endpoints
+  /api/v1/admin/database:
+    get:
+      tags: [admin]
+      summary: Database Admin Interface
+      description: Serve the database admin web interface
+      responses:
+        '200':
+          description: Database admin interface
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /api/v1/admin/database/tables:
+    get:
+      tags: [admin]
+      summary: Get Database Tables
+      description: Get list of all database tables and their basic info
+      responses:
+        '200':
+          description: Database tables retrieved successfully
+
+  /api/v1/admin/database/query:
+    get:
+      tags: [admin]
+      summary: Execute Database Query
+      description: Execute a read-only SQL query and return results
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 100
+      responses:
+        '200':
+          description: Query executed successfully
+
+  /api/v1/admin/database/stats:
+    get:
+      tags: [admin]
+      summary: Get Database Stats
+      description: Get database statistics and table row counts
+      responses:
+        '200':
+          description: Database statistics retrieved successfully
+
+  /api/v1/admin/database/health:
+    get:
+      tags: [admin]
+      summary: Database Health Check
+      description: Check database health and connectivity
+      responses:
+        '200':
+          description: Database health status
+
+  # Version Endpoints
+  /api/v1/version:
+    get:
+      tags: [version]
+      summary: Get API Version Information
+      description: Retrieve information about the current API version and all supported versions
+      responses:
+        '200':
+          description: API version information retrieved successfully
+
+  /api/v1/version/{version}:
+    get:
+      tags: [version]
+      summary: Get Specific Version Details
+      description: Get detailed information about a specific API version
+      parameters:
+        - name: version
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Version details retrieved successfully
+        '404':
+          description: Version not found
+
+  # Metrics Endpoint
+  /metrics:
+    get:
+      tags: [monitoring]
+      summary: Prometheus Metrics
+      description: Prometheus metrics endpoint
+      security: []
+      responses:
+        '200':
+          description: Prometheus metrics
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  # Root Endpoint
+  /:
+    get:
+      tags: [general]
+      summary: Root Endpoint
+      description: Root endpoint with API information
+      security: []
+      responses:
+        '200':
+          description: API information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    example: EasyPay Payment Gateway
+                  version:
+                    type: string
+                    example: "0.1.0"
+                  status:
+                    type: string
+                    example: running
+                  docs:
+                    type: string
+                    example: /docs
+                  health:
+                    type: string
+                    example: /health
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key authentication
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token authentication
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [error, timestamp]
+      properties:
+        error:
+          type: object
+          required: [type, code, message]
+          properties:
+            type:
+              type: string
+              example: validation_error
+            code:
+              type: string
+              example: invalid_amount
+            message:
+              type: string
+              example: Amount must be greater than 0
+            param:
+              type: string
+              example: amount
+            request_id:
+              type: string
+              example: req_123456789
+        timestamp:
+          type: string
+          format: date-time
+          example: "2024-01-01T00:00:00Z"
+
+    PaymentCreateRequest:
+      type: object
+      required: [amount, currency, payment_method]
+      properties:
+        amount:
+          type: number
+          minimum: 0.01
+          example: 25.99
+        currency:
+          type: string
+          maxLength: 3
+          default: USD
+          example: USD
+        payment_method:
+          type: string
+          example: credit_card
+        customer_id:
+          type: string
+          maxLength: 255
+          example: cust_123456789
+        customer_email:
+          type: string
+          maxLength: 255
+          example: john.doe@example.com
+        customer_name:
+          type: string
+          maxLength: 255
+          example: John Doe
+        card_token:
+          type: string
+          maxLength: 255
+          example: tok_visa_4242
+        description:
+          type: string
+          example: Premium subscription payment
+        metadata:
+          type: object
+          example:
+            order_id: order_2024_001
+            product: premium_plan
+        is_test:
+          type: boolean
+          default: false
+
+    PaymentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        external_id:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+        status:
+          type: string
+          enum: [pending, authorized, captured, settled, failed, cancelled, refunded]
+        customer_id:
+          type: string
+        customer_email:
+          type: string
+        customer_name:
+          type: string
+        description:
+          type: string
+        metadata:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        is_test:
+          type: boolean
+
+    WebhookResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_type:
+          type: string
+        event_id:
+          type: string
+        status:
+          type: string
+        payment_id:
+          type: string
+          format: uuid
+        url:
+          type: string
+        retry_count:
+          type: integer
+        max_retries:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        delivered_at:
+          type: string
+          format: date-time
+        failed_at:
+          type: string
+          format: date-time
+        next_retry_at:
+          type: string
+          format: date-time
+        is_test:
+          type: boolean
+        signature_verified:
+          type: boolean
+
+tags:
+  - name: health
+    description: Health check endpoints for monitoring and load balancers
+  - name: authentication
+    description: API key management, JWT token generation, and authentication
+  - name: payments
+    description: Payment processing, refunds, cancellations, and transaction management
+  - name: webhooks
+    description: Webhook endpoint management, delivery, and retry operations
+  - name: webhook-receiver
+    description: Endpoints for receiving incoming webhooks from external services
+  - name: subscriptions
+    description: Recurring subscription management and billing
+  - name: admin
+    description: Administrative endpoints for system management
+  - name: version
+    description: API version information and management
+  - name: monitoring
+    description: System monitoring and metrics endpoints
+  - name: general
+    description: General API information endpoints
