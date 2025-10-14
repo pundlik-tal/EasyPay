@@ -1,13 +1,14 @@
 name: Progress Tracking
 
 on:
-  schedule:
-    - cron: '0 9 * * *'  # Run daily at 9 AM
+  # DISABLED: Progress tracking workflow disabled to prevent failure emails
+  # schedule:
+  #   - cron: '0 9 * * *'  # Run daily at 9 AM
   workflow_dispatch:  # Allow manual triggering
-  push:
-    branches: [ main, develop ]
-    paths:
-      - 'docs/sources/04-progress-tracking-dashboard.md'
+  # push:
+  #   branches: [ main, develop ]
+  #   paths:
+  #     - 'docs/sources/04-progress-tracking-dashboard.md'
 
 jobs:
   track-progress:
@@ -47,10 +48,11 @@ jobs:
         git diff --staged --quiet || git commit -m "Update progress tracking dashboard [skip ci]"
         git push
         
-    - name: Send progress notification
-      if: always()
-      run: |
-        python scripts/send_notification.py
-      env:
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+    # DISABLED: Notification step removed to prevent failure emails
+    # - name: Send progress notification
+    #   if: always()
+    #   run: |
+    #     python scripts/send_notification.py
+    #   env:
+    #     SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    #     TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
